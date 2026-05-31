@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}{{ client.name }} — {{ t.crm_title if t is defined else 'Clientes' }} — PressAndLive{% endblock %}
+
+{% block content %}
+
+<!-- Alerta de nota guardada -->
+{% if saved %}
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+  {{ t.crm_note_saved if t is defined else '✅ Nota guardada.' }}
+  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+<!-- Botón volver -->
+<div class="mb-4">
+  <a href="/clientes" class="btn btn-sm btn-outline-secondary fw-semibold">
+    ← {{ t.crm_back if t is defined else 'Volver a clientes' }}
+  </a>
+</div>
+
+<!-- ── Cabecera del cliente ─────────────────────────────────────────────────── -->
+<div class="card border-0 shadow-sm mb-4"
+     style="background:#fff7ed; border:1.5px solid #fed7aa !important; border-radius:14px;">
+  <div class="card-body p-4 d-flex align-items-center gap-4 flex-wrap">
+
+    <!-- Avatar -->
+    <div class="rounded-circle d-flex align-items-center justify-content-center fw-black flex-shrink-0"
+         style="width:64px; height:64px; background:#F97316; color:#fff; font-size:1.6rem;">
+      {{ client.name[0].upper() }}
+    </div>
+
+    <!-- Info -->
+    <div class="flex-grow-1">
+      <h1 class="fw-black fs-4 mb-1" style="color:#9a3412;">{{ client.name }}</h1>
+      <div class="d-flex flex-wrap gap-3" style="font-size:.88rem; color:#6b7280;">
+        <span>✉️ {{ client.email }}</span>
+        {% if client.phone %}<span>📱 {{ client.phone }}</span>{% endif %}
+      </div>
+    </div>
+
+    <!-- Stats + botón nueva cita -->
+    <div class="text-center flex-shrink-0 d-flex flex-column align-items-center gap-2">
+      <div>
+        <div class="fw-black fs-3 text-pal lh-1">{{ client.total }}</div>
+        <div class="text-muted" style="font-size:.78rem;">
+          {{ t.crm_col_total if t is defined else 'citas' }}
+        </div>
+      </div>
+      <a href="/agenda/{{ prof.slug }}" target="_blank"
+         class="btn btn-pal btn-sm fw-semibold">
+        📅 {{ t.crm_book_new if t is defined else 'Reservar nueva cita' }}
+      </a>
+    </div>
+
+  </div>
+</div>
+
+<div class="row g-4">
+
+  <!-- ── Columna izquierda: historial de citas ──────────────────────────────── -->
+  <div class="col-12 col-lg-7">
+    <h2 class="fs-5 fw-bold mb-3">
+      📋 {{ t.crm_booking_history if t is defined else 'Historial de citas' }}
+    </h2>
+
+    {% if bookings %}
+    <div class="d-flex flex-column gap-2">
+      {% for b in bookings %}
+      <div class="card border shadow-sm">
+        <div class="card-body py-3 px-4 d-flex align-items-start justify-content-between flex-wrap gap-2">
+          <div>
+            <!-- Estado -->
+            {% if b.status == 'confirmed' %}
+              <span class="badge rounded-pill mb-1"
+                    style="background:#dcfce7; color:#166534; font-size:.7rem; font-weight:600;">
+                ✅ {{ 'Confirmada' if lang == 'es' else 'Confirmed' }}
+              </span>
+            {% elif b.status == 'cancelled' %}
+              <span class="badge rounded-pill mb-1"
+                    style="background:#fee2e2; color:#991b1b; font-size:.7rem; font-weight:600;">
+                ❌ {{ 'Cancelada' if lang == 'es' else 'Cancelled' }}
+              </span>
+            {% else %}
+              <span class="badge rounded-pill mb-1"
+                    style="background:#f3f4f6; color:#6b7280; font-size:.7rem; font-weight:600;">
+                {{ b.status }}
+              </span>
+            {% endif %}
+            <!-- Notas de la cita -->
+            {% if b.notes %}
+            <div class="text-muted small mt-1" style="font-size:.82rem;">
+              💬 {{ b.notes }}
+            </div>
+            {% endif %}
+          </div>
+          <!-- Fecha y hora -->
+          <div class="text-end flex-shrink-0">
+            <div class="fw-bold text-pal small">{{ b.date }}</div>
+            <div class="text-muted small">{{ b.start_time }} – {{ b.end_time }}</div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="card border-0 bg-white shadow-sm text-center p-4 text-muted">
+      {{ t.crm_no_bookings if t is defined else 'Sin citas registradas' }}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ── Columna derecha: notas internas ───────────────────────────────────── -->
+  <div class="col-12 col-lg-5">
+    <h2 class="fs-5 fw-bold mb-1">
+      📝 {{ t.crm_notes_title if t is defined else 'Notas internas' }}
+    </h2>
+    <p class="text-muted small mb-3">
+      {{ t.crm_notes_desc if t is defined else 'Solo vos podés ver estas notas' }}
+    </p>
+
+    <!-- Formulario nueva nota -->
+    <form method="post" action="/clientes/{{ client.cid }}/nota" class="mb-4">
+      <textarea name="note" class="form-control mb-2" rows="3"
+                placeholder="{{ t.crm_note_placeholder if t is defined else 'Escribí una nota sobre este cliente...' }}"
+                required></textarea>
+      <button type="submit" class="btn btn-pal btn-sm fw-semibold w-100">
+        + {{ t.crm_note_add if t is defined else 'Agregar nota' }}
+      </button>
+    </form>
+
+    <!-- Lista de notas existentes -->
+    {% if notes %}
+    <div class="d-flex flex-column gap-2">
+      {% for n in notes %}
+      <div class="card border-0 shadow-sm p-3" style="border-radius:10px; background:#fafafa;">
+        <div style="font-size:.88rem; color:#374151; white-space:pre-wrap;">{{ n.note }}</div>
+        <div class="text-muted mt-2" style="font-size:.72rem;">
+          🕐 {{ n.created_at.strftime('%d/%m/%Y %H:%M') }}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-muted small text-center py-3">
+      {{ 'Todavía no hay notas para este cliente.' if lang == 'es' else 'No notes yet for this client.' }}
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+{% endblock %}

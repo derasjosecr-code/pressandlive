@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="{{ lang | default('es') }}">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ prof.name }} — PressAndLive</title>
+  <meta name="description" content="{{ prof.specialty }}{% if prof.city %} en {{ prof.city }}{% endif %}{% if prof.country %}, {{ prof.country }}{% endif %}" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+  <style>
+    body { background: #f8f9fa; }
+
+    .profile-hero {
+      background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+      border-bottom: 1px solid #fed7aa;
+      padding: 48px 0 40px;
+      margin-bottom: 32px;
+    }
+    .profile-avatar {
+      width: 88px; height: 88px; border-radius: 50%;
+      background: var(--pal-orange);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px; font-weight: 900; color: #fff;
+      border: 4px solid #fff;
+      box-shadow: 0 4px 16px rgba(249,115,22,.3);
+      flex-shrink: 0;
+    }
+    .module-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #fff; border: 1.5px solid #e5e7eb;
+      border-radius: 20px; padding: 6px 14px;
+      font-size: .82rem; font-weight: 600; color: #374151;
+    }
+    .explore-nav {
+      background: #fff;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 12px 0;
+    }
+    .explore-footer {
+      text-align: center; font-size: .8rem; color: #9ca3af; padding: 32px 0;
+    }
+    .explore-footer a { color: var(--pal-orange); text-decoration: none; font-weight: 700; }
+  </style>
+</head>
+<body>
+
+<!-- ── Navbar mínimo ──────────────────────────────────────────────────────── -->
+<nav class="explore-nav">
+  <div class="container d-flex align-items-center justify-content-between">
+    <a href="/" class="d-flex align-items-center gap-2 text-decoration-none">
+      <div style="position:relative;width:32px;height:32px;display:inline-block;">
+        <div style="position:absolute;bottom:0;left:0;width:32px;height:29px;background:#c05000;border-radius:7px;"></div>
+        <div style="position:absolute;top:0;left:0;width:32px;height:27px;background:#f97316;border-radius:7px;display:flex;align-items:center;justify-content:center;">
+          <div style="width:8px;height:8px;background:#fff;border-radius:50%;opacity:.9;"></div>
+        </div>
+      </div>
+      <span class="brand-text" style="font-size:1.1rem;">Press<span>&amp; Live</span></span>
+    </a>
+    <div class="d-flex align-items-center gap-2">
+      <!-- Selector de idioma -->
+      <div class="d-flex gap-1">
+        <form method="post" action="/set-lang/es" class="m-0">
+          <button type="submit"
+            class="btn btn-sm {% if lang == 'es' %}btn-pal{% else %}btn-outline-secondary{% endif %} px-2 py-1"
+            style="font-size:.75rem;">🇪🇸 ES</button>
+        </form>
+        <form method="post" action="/set-lang/en" class="m-0">
+          <button type="submit"
+            class="btn btn-sm {% if lang == 'en' %}btn-pal{% else %}btn-outline-secondary{% endif %} px-2 py-1"
+            style="font-size:.75rem;">🇬🇧 EN</button>
+        </form>
+      </div>
+      <a href="/explorar" class="btn btn-sm btn-outline-secondary fw-semibold">
+        {{ t.profile_back if t is defined else '← Ver más profesionales' }}
+      </a>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Hero del perfil ────────────────────────────────────────────────────── -->
+<div class="profile-hero">
+  <div class="container">
+    <div class="d-flex align-items-center gap-4 flex-wrap">
+
+      <!-- Avatar (foto si tiene URL, iniciales si no) -->
+      {% if prof.avatar_url %}
+      <img src="{{ prof.avatar_url }}" alt="{{ prof.name }}"
+           class="profile-avatar"
+           style="object-fit:cover;"
+           onerror="this.outerHTML='<div class=\'profile-avatar\'>{{ prof.name[0] }}</div>'" />
+      {% else %}
+      <div class="profile-avatar">{{ prof.name[0] }}</div>
+      {% endif %}
+
+      <!-- Datos principales -->
+      <div class="flex-grow-1">
+        <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
+          <h1 class="fw-black mb-0" style="font-size:1.8rem; color:#1a1a1a;">{{ prof.name }}</h1>
+          {% if has_agenda %}
+          <span class="badge rounded-pill"
+                style="background:#dcfce7; color:#166534; font-size:.75rem; font-weight:700; padding:5px 12px;">
+            📅 {{ t.explore_badge_online if t is defined else 'Acepta citas online' }}
+          </span>
+          {% endif %}
+        </div>
+
+        {% if prof.specialty %}
+        <div class="fw-semibold mb-2" style="color:#9a3412; font-size:1rem;">{{ prof.specialty }}</div>
+        {% endif %}
+
+        <!-- Ubicación con bandera -->
+        {% if prof.country %}
+        <div class="text-muted mb-3" style="font-size:.9rem;">
+          {% set flag = get_country_flag(prof.country) %}
+          {{ flag }} {{ prof.country }}{% if prof.city %} · {{ prof.city }}{% endif %}
+        </div>
+        {% elif prof.city %}
+        <div class="text-muted mb-3" style="font-size:.9rem;">📍 {{ prof.city }}</div>
+        {% endif %}
+
+        <!-- Calificación promedio (si hay reseñas) -->
+        {% if avg_rating %}
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <div style="color:#f59e0b; font-size:1.1rem;">
+            {% for i in range(1, 6) %}
+              {% if i <= avg_rating | int %}★{% elif (avg_rating % 1) >= 0.5 and i == (avg_rating | int) + 1 %}★{% else %}☆{% endif %}
+            {% endfor %}
+          </div>
+          <span class="fw-bold" style="color:#374151;">{{ avg_rating }}</span>
+          <span class="text-muted small">
+            ({{ review_count }} {{ t.enc_prof_reviews if t is defined else 'reseñas' }})
+          </span>
+        </div>
+        {% endif %}
+
+        <!-- CTA principal -->
+        {% if has_agenda %}
+        <a href="/agenda/{{ prof.slug }}"
+           class="btn btn-pal fw-bold px-4 py-2"
+           style="font-size:1rem; border-radius:10px;">
+          {{ t.profile_book_btn if t is defined else '📅 Reservar cita' }}
+        </a>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── Contenido del perfil ───────────────────────────────────────────────── -->
+<div class="container pb-5" style="max-width:760px;">
+
+  <!-- Biografía del profesional -->
+  {% if prof.bio %}
+  <div class="card border-0 shadow-sm mb-4" style="border-radius:14px;">
+    <div class="card-body p-4">
+      <h2 class="fw-bold fs-5 mb-3">
+        {{ 'Sobre mí' if lang == 'es' else 'About me' }}
+      </h2>
+      <p class="mb-0 text-muted" style="line-height:1.7; white-space:pre-wrap;">{{ prof.bio }}</p>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Calificación de clientes -->
+  {% if avg_rating and review_count %}
+  <div class="card border-0 shadow-sm mb-4" style="border-radius:14px;">
+    <div class="card-body p-4">
+      <h2 class="fw-bold fs-5 mb-3">
+        {{ t.enc_prof_rating if t is defined else 'Calificación' }}
+      </h2>
+      <div class="d-flex align-items-center gap-4 flex-wrap">
+        <!-- Número grande -->
+        <div class="text-center">
+          <div class="fw-black" style="font-size:3.5rem; line-height:1; color:#f97316;">{{ avg_rating }}</div>
+          <div style="font-size:1.3rem; color:#f59e0b; margin:4px 0;">
+            {% for i in range(1, 6) %}
+              {% if i <= avg_rating | int %}★{% elif (avg_rating % 1) >= 0.5 and i == (avg_rating | int) + 1 %}★{% else %}☆{% endif %}
+            {% endfor %}
+          </div>
+          <div class="text-muted small">
+            {{ review_count }} {{ t.enc_prof_reviews if t is defined else 'reseñas' }}
+          </div>
+        </div>
+        <!-- Descripción -->
+        <div class="flex-grow-1">
+          <div class="fw-semibold mb-1" style="color:#374151;">
+            {% if avg_rating >= 4.5 %}
+              {% if lang == 'es' %}⭐ Excelente{% else %}⭐ Excellent{% endif %}
+            {% elif avg_rating >= 4.0 %}
+              {% if lang == 'es' %}Muy bueno{% else %}Very good{% endif %}
+            {% elif avg_rating >= 3.0 %}
+              {% if lang == 'es' %}Bueno{% else %}Good{% endif %}
+            {% else %}
+              {% if lang == 'es' %}Regular{% else %}Fair{% endif %}
+            {% endif %}
+          </div>
+          <div class="text-muted small">
+            {% if lang == 'es' %}
+            Basado en {{ review_count }} opinión{% if review_count != 1 %}es{% endif %} de clientes reales.
+            {% else %}
+            Based on {{ review_count }} real client review{% if review_count != 1 %}s{% endif %}.
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Servicios disponibles — badges orientados al cliente -->
+  {% if client_badges %}
+  <div class="card border-0 shadow-sm mb-4" style="border-radius:14px;">
+    <div class="card-body p-4">
+      <h2 class="fw-bold fs-5 mb-3">
+        {{ t.profile_modules_title if t is defined else 'Servicios disponibles' }}
+      </h2>
+      <div class="d-flex flex-wrap gap-2">
+        {% for badge in client_badges %}
+        <span style="
+          display:inline-flex; align-items:center; gap:6px;
+          background:{{ badge.color_bg }};
+          color:{{ badge.color_text }};
+          border:1.5px solid {{ badge.color_border }};
+          border-radius:20px;
+          padding:7px 16px;
+          font-size:.85rem;
+          font-weight:700;
+          white-space:nowrap;
+        ">
+          {{ badge.label }}
+        </span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Ubicación detallada -->
+  {% if prof.city or prof.country %}
+  <div class="card border-0 shadow-sm mb-4" style="border-radius:14px;">
+    <div class="card-body p-4">
+      <h2 class="fw-bold fs-5 mb-3">
+        {{ t.profile_location if t is defined else 'Ubicación' }}
+      </h2>
+      <div class="d-flex align-items-center gap-2">
+        {% set flag = get_country_flag(prof.country) %}
+        <span style="font-size:1.5rem;">{{ flag or '🌎' }}</span>
+        <div>
+          {% if prof.country %}
+            <div class="fw-semibold">
+              {{ prof.country }}{% if prof.city %} · {{ prof.city }}{% endif %}
+            </div>
+          {% elif prof.city %}
+            <div class="fw-semibold">{{ prof.city }}</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Botón de reserva (bottom CTA si tiene agenda) -->
+  {% if has_agenda %}
+  <div class="d-grid">
+    <a href="/agenda/{{ prof.slug }}"
+       class="btn btn-pal btn-lg fw-bold py-3"
+       style="border-radius:12px; font-size:1.1rem;">
+      {{ t.profile_book_btn if t is defined else '📅 Reservar cita' }}
+    </a>
+  </div>
+  {% else %}
+  <!-- Sin agenda activa — mensaje informativo -->
+  <div class="card border-0 p-4 text-muted text-center"
+       style="background:#f8fafc; border-radius:12px; font-size:.9rem;">
+    {{ 'Este profesional no tiene agenda online configurada aún.' if lang == 'es'
+       else 'This professional has not set up online booking yet.' }}
+  </div>
+  {% endif %}
+
+</div>
+
+<!-- ── Footer ─────────────────────────────────────────────────────────────── -->
+<div class="explore-footer">
+  <p class="mb-1">
+    {{ '¿Sos profesional?' if lang == 'es' else 'Are you a professional?' }}
+    <a href="/register">{{ 'Registrate gratis en PressAndLive' if lang == 'es' else 'Sign up free on PressAndLive' }}</a>
+  </p>
+  <p>© 2026 <a href="/">PressAndLive</a></p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

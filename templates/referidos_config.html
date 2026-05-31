@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+{% block title %}{{ t.ref_config_title }} — PressAndLive{% endblock %}
+
+{% block content %}
+
+<div class="mb-4">
+  <a href="/referidos" class="btn btn-sm btn-outline-secondary fw-semibold mb-2">
+    ← {{ 'Volver a referidos' if lang == 'es' else 'Back to referrals' }}
+  </a>
+  <h1 class="fw-black fs-3 mb-0">⚙️ {{ t.ref_config_title }}</h1>
+</div>
+
+<div class="row g-4">
+
+  <!-- ── Formulario ────────────────────────────────────────────────────────── -->
+  <div class="col-12 col-lg-7">
+    <div class="card border-0 shadow-sm" style="border-radius:14px;">
+      <div class="card-body p-4">
+
+        {% if error %}
+        <div class="alert alert-danger py-2 small mb-3">{{ error }}</div>
+        {% endif %}
+
+        <form method="post" action="/referidos/config">
+
+          <!-- Activo -->
+          <div class="mb-4 p-3 rounded-3" style="background:#f8f9fa;">
+            <div class="form-check form-switch">
+              <input type="checkbox" name="is_active" value="on"
+                     class="form-check-input" id="is-active-check"
+                     {% if program and program.is_active %}checked{% endif %}
+                     style="width:2.5em; height:1.4em;" />
+              <label class="form-check-label fw-bold ms-2" for="is-active-check">
+                {{ t.ref_field_active }}
+              </label>
+            </div>
+            <div class="text-muted small mt-1 ms-4">
+              {% if lang == 'es' %}
+              Si está activo, los clientes verán la opción de compartir su enlace al reservar.
+              {% else %}
+              If active, clients will see the option to share their link after booking.
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Tipo de descuento -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">{{ t.ref_field_type }}</label>
+            <select name="discount_type" class="form-select" id="type-select"
+                    onchange="updateSuffix()">
+              <option value="percent"
+                {% if not program or program.discount_type == 'percent' %}selected{% endif %}>
+                {{ t.ref_type_percent }}
+              </option>
+              <option value="fixed"
+                {% if program and program.discount_type == 'fixed' %}selected{% endif %}>
+                {{ t.ref_type_fixed }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Descuentos -->
+          <div class="row g-3 mb-3">
+            <div class="col-sm-6">
+              <label class="form-label fw-semibold small">
+                {{ t.ref_field_referrer }}
+                <span id="suffix-a" class="text-muted fw-normal">
+                  {% if not program or program.discount_type == 'percent' %}(%){% endif %}
+                </span>
+              </label>
+              <input type="number" name="referrer_discount" class="form-control"
+                     value="{{ program.referrer_discount if program else 10 }}"
+                     min="0.01" step="0.01" placeholder="10" required />
+              <div class="form-text text-muted small">
+                {% if lang == 'es' %}
+                Para quien recomienda — aplica en su próxima reserva
+                {% else %}
+                For the referring client — applied on their next booking
+                {% endif %}
+              </div>
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label fw-semibold small">
+                {{ t.ref_field_referee }}
+                <span id="suffix-b" class="text-muted fw-normal">
+                  {% if not program or program.discount_type == 'percent' %}(%){% endif %}
+                </span>
+              </label>
+              <input type="number" name="referee_discount" class="form-control"
+                     value="{{ program.referee_discount if program else 10 }}"
+                     min="0.01" step="0.01" placeholder="10" required />
+              <div class="form-text text-muted small">
+                {% if lang == 'es' %}
+                Para el cliente nuevo — aplica al momento de reservar
+                {% else %}
+                For the new client — applied when booking
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <!-- Máx. usos por cliente -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">{{ t.ref_field_max }}</label>
+            <input type="number" name="max_uses_per_client" class="form-control"
+                   value="{{ program.max_uses_per_client if program and program.max_uses_per_client is not none else '' }}"
+                   min="1" step="1"
+                   placeholder="{{ 'Sin límite' if lang == 'es' else 'No limit' }}" />
+          </div>
+
+          <!-- Vencimiento -->
+          <div class="mb-4">
+            <label class="form-label fw-semibold small">{{ t.ref_field_until }}</label>
+            <input type="date" name="valid_until" class="form-control"
+                   value="{{ program.valid_until.strftime('%Y-%m-%d') if program and program.valid_until else '' }}" />
+          </div>
+
+          <!-- Botones -->
+          <div class="d-flex gap-2 flex-wrap">
+            <button type="submit" class="btn btn-pal fw-bold px-4">
+              💾 {{ t.ref_btn_save }}
+            </button>
+            <a href="/referidos" class="btn btn-outline-secondary fw-semibold px-4">
+              {{ t.ref_btn_cancel }}
+            </a>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Panel de cómo funciona ──────────────────────────────────────────── -->
+  <div class="col-12 col-lg-5">
+    <div class="card border-0 shadow-sm" style="border-radius:14px; background:#fffbf5;">
+      <div class="card-body p-4">
+        <h3 class="fw-bold fs-6 mb-3" style="color:#9a3412;">
+          💡 {{ 'Cómo funciona el programa' if lang == 'es' else 'How it works' }}
+        </h3>
+        <ol class="ps-3 d-flex flex-column gap-3 mb-0" style="font-size:.87rem; color:#374151;">
+          <li>
+            {% if lang == 'es' %}
+            El cliente reserva una cita. Al confirmar, recibe su enlace único de referido.
+            {% else %}
+            The client books an appointment. After confirming, they receive their unique referral link.
+            {% endif %}
+          </li>
+          <li>
+            {% if lang == 'es' %}
+            El cliente comparte el enlace por WhatsApp, email o redes sociales.
+            {% else %}
+            The client shares the link via WhatsApp, email, or social media.
+            {% endif %}
+          </li>
+          <li>
+            {% if lang == 'es' %}
+            Un amigo hace clic en el enlace y ve el descuento de referido automáticamente.
+            {% else %}
+            A friend clicks the link and automatically sees the referral discount.
+            {% endif %}
+          </li>
+          <li>
+            {% if lang == 'es' %}
+            El amigo reserva y ambos reciben su descuento: el nuevo cliente al confirmar,
+            el referidor en su próxima cita.
+            {% else %}
+            The friend books and both get their discount: the new client on confirmation,
+            the referrer on their next appointment.
+            {% endif %}
+          </li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- Vista previa del enlace -->
+    {% if program and program.is_active %}
+    <div class="card border-0 shadow-sm mt-3" style="border-radius:14px;">
+      <div class="card-body p-4">
+        <h3 class="fw-bold fs-6 mb-2">
+          🔗 {{ 'Ejemplo de enlace' if lang == 'es' else 'Link example' }}
+        </h3>
+        <code class="small" style="color:#9a3412; word-break:break-all;">
+          /agenda/{{ prof.slug }}?ref=ABCD1234
+        </code>
+        <div class="text-muted small mt-2">
+          {% if lang == 'es' %}
+          Cada cliente tiene un código único generado a partir de su email.
+          {% else %}
+          Each client has a unique code generated from their email.
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function updateSuffix() {
+  const type = document.getElementById('type-select').value;
+  const suf  = type === 'percent' ? '(%)' : '';
+  document.getElementById('suffix-a').textContent = suf;
+  document.getElementById('suffix-b').textContent = suf;
+}
+</script>
+{% endblock %}

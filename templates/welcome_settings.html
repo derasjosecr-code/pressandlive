@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+{% block title %}{{ t.welcome_title if t is defined else 'Bienvenida de clientes' }} — PressAndLive{% endblock %}
+
+{% block content %}
+
+<!-- Alerta de guardado -->
+{% if saved %}
+<div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+  {{ t.welcome_saved if t is defined else '✅ ¡Mensajes guardados correctamente!' }}
+  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+<!-- Encabezado -->
+<div class="mb-4">
+  <h1 class="fw-black fs-3 mb-1">
+    👋 {{ t.welcome_title if t is defined else 'Bienvenida de clientes' }}
+  </h1>
+  <p class="text-muted small mb-0">
+    {{ t.welcome_subtitle if t is defined else 'Personalizá el mensaje que reciben tus clientes cuando reservan su cita.' }}
+  </p>
+</div>
+
+<div class="row g-4">
+
+  <!-- ── Columna izquierda: formulario ────────────────────────────────────── -->
+  <div class="col-12 col-lg-7">
+    <form method="POST" action="/welcome-settings">
+
+      <!-- Mensaje en español -->
+      <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body p-4">
+          <label class="fw-bold mb-1 d-flex align-items-center gap-2" for="message_es">
+            🇪🇸 {{ t.welcome_msg_es_label if t is defined else 'Mensaje en español' }}
+          </label>
+          <p class="text-muted small mb-2">
+            {{ t.welcome_default_note if t is defined else 'Si dejás el campo vacío, se usará el mensaje por defecto.' }}
+          </p>
+          <textarea
+            id="message_es"
+            name="message_es"
+            class="form-control"
+            rows="6"
+            placeholder="{{ default_es }}"
+            style="font-size:.9rem;line-height:1.6;resize:vertical;">{{ message_es }}</textarea>
+        </div>
+      </div>
+
+      <!-- Mensaje en inglés -->
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+          <label class="fw-bold mb-1 d-flex align-items-center gap-2" for="message_en">
+            🇬🇧 {{ t.welcome_msg_en_label if t is defined else 'Mensaje en inglés' }}
+          </label>
+          <p class="text-muted small mb-2">
+            {{ t.welcome_default_note if t is defined else 'Si dejás el campo vacío, se usará el mensaje por defecto.' }}
+          </p>
+          <textarea
+            id="message_en"
+            name="message_en"
+            class="form-control"
+            rows="6"
+            placeholder="{{ default_en }}"
+            style="font-size:.9rem;line-height:1.6;resize:vertical;">{{ message_en }}</textarea>
+        </div>
+      </div>
+
+      <!-- Botón guardar -->
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-pal fw-bold px-4">
+          💾 {{ t.welcome_save_btn if t is defined else 'Guardar mensajes' }}
+        </button>
+        <a href="/dashboard" class="btn btn-outline-secondary fw-semibold">
+          ← Dashboard
+        </a>
+      </div>
+
+    </form>
+  </div>
+
+  <!-- ── Columna derecha: variables + vista previa ─────────────────────────── -->
+  <div class="col-12 col-lg-5">
+
+    <!-- Panel de variables -->
+    <div class="card border-0 shadow-sm mb-3"
+         style="background:#fff7ed; border:1.5px solid #fed7aa !important;">
+      <div class="card-body p-4">
+        <div class="fw-bold mb-1" style="color:#9a3412;">
+          🔤 {{ t.welcome_variables_title if t is defined else 'Variables disponibles' }}
+        </div>
+        <p class="text-muted small mb-3">
+          {{ t.welcome_variables_hint if t is defined else 'Podés usar estas palabras clave en tu mensaje — se reemplazan automáticamente:' }}
+        </p>
+
+        <div class="d-flex flex-column gap-2">
+          {% set variables = [
+            ("{nombre_cliente}",     "María González",   "Name of the client"),
+            ("{nombre_profesional}", prof.name,           "Your name"),
+            ("{fecha_cita}",         "2026-06-15",        "Appointment date"),
+            ("{hora_cita}",          "10:00",             "Appointment time"),
+          ] %}
+          {% for var, ejemplo, desc_en in variables %}
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <code class="px-2 py-1 rounded"
+                    style="background:#fed7aa;color:#9a3412;font-size:.85rem;
+                           cursor:pointer;user-select:all;"
+                    onclick="insertarVariable('{{ var }}')"
+                    title="Click para copiar">{{ var }}</code>
+              <div class="text-muted" style="font-size:.75rem;margin-top:2px;">
+                {% if lang == 'en' %}{{ desc_en }}{% else %}Ej: {{ ejemplo }}{% endif %}
+              </div>
+            </div>
+            <button type="button"
+                    class="btn btn-sm btn-outline-secondary px-2 py-1"
+                    style="font-size:.75rem;"
+                    onclick="insertarVariable('{{ var }}')"
+                    title="Insertar en el mensaje">
+              ＋
+            </button>
+          </div>
+          {% endfor %}
+        </div>
+
+        <p class="text-muted mt-3 mb-0" style="font-size:.75rem;">
+          💡 Hacé click en una variable o en el botón <strong>＋</strong> para insertarla en el textarea activo.
+        </p>
+      </div>
+    </div>
+
+    <!-- Vista previa del email -->
+    <div class="card border-0 shadow-sm">
+      <div class="card-body p-4">
+        <div class="fw-bold mb-3">
+          👁️ {{ t.welcome_preview_title if t is defined else 'Vista previa del email' }}
+        </div>
+
+        <!-- Mini simulación del email -->
+        <div style="border:1px solid #eee;border-radius:10px;overflow:hidden;font-size:.82rem;">
+          <!-- Cabecera naranja -->
+          <div style="background:#F97316;padding:14px;text-align:center;">
+            <span style="font-weight:900;color:#fff;font-size:1rem;">
+              Press<span style="color:#1A1A1A;">And</span>Live
+            </span>
+          </div>
+          <!-- Cuerpo -->
+          <div style="padding:16px 20px;background:#fff;">
+            <div style="font-weight:900;font-size:1rem;margin-bottom:8px;">
+              👋 {% if lang == 'en' %}Welcome to your appointment!{% else %}¡Bienvenido/a a tu cita!{% endif %}
+            </div>
+            <div id="preview-text" style="color:#555;line-height:1.6;white-space:pre-wrap;font-size:.82rem;">
+              {% if lang == 'en' %}
+                {% if message_en %}{{ message_en }}{% else %}{{ default_en }}{% endif %}
+              {% else %}
+                {% if message_es %}{{ message_es }}{% else %}{{ default_es }}{% endif %}
+              {% endif %}
+            </div>
+            <!-- Mini badge de cita -->
+            <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;
+                        padding:10px 14px;margin-top:12px;">
+              <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;
+                          letter-spacing:.5px;color:#9a3412;margin-bottom:6px;">
+                {% if lang == 'en' %}Your appointment{% else %}Tu cita{% endif %}
+              </div>
+              <div style="color:#555;font-size:.78rem;">📅 2026-06-15 &nbsp;|&nbsp; 🕐 10:00 – 11:00</div>
+            </div>
+          </div>
+          <!-- Pie -->
+          <div style="background:#f9f9f9;padding:10px;text-align:center;
+                      border-top:1px solid #eee;">
+            <span style="font-size:.7rem;color:#aaa;">
+              {% if lang == 'en' %}Powered by{% else %}Gestionado por{% endif %}
+              <span style="color:#F97316;">PressAndLive</span>
+            </span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── Insertar variable en el textarea activo ────────────────────────────────
+let lastFocused = document.getElementById('message_es');
+
+document.getElementById('message_es').addEventListener('focus', () => {
+  lastFocused = document.getElementById('message_es');
+});
+document.getElementById('message_en').addEventListener('focus', () => {
+  lastFocused = document.getElementById('message_en');
+});
+
+function insertarVariable(v) {
+  const ta    = lastFocused || document.getElementById('message_es');
+  const start = ta.selectionStart;
+  const end   = ta.selectionEnd;
+  ta.value    = ta.value.slice(0, start) + v + ta.value.slice(end);
+  ta.selectionStart = ta.selectionEnd = start + v.length;
+  ta.focus();
+  actualizarPreview();
+}
+
+// ── Vista previa en tiempo real ────────────────────────────────────────────
+const LANG = '{{ lang | default("es") }}';
+
+function actualizarPreview() {
+  const ta      = LANG === 'en' ? document.getElementById('message_en') : document.getElementById('message_es');
+  const preview = document.getElementById('preview-text');
+  let txt = ta.value.trim();
+  if (!txt) {
+    txt = LANG === 'en' ? `{{ default_en | replace('\n', '\\n') | replace("'", "\\'") }}` : `{{ default_es | replace('\n', '\\n') | replace("'", "\\'") }}`;
+  }
+  // Reemplazar variables por ejemplos
+  txt = txt
+    .replace(/\{nombre_cliente\}/g,     'María González')
+    .replace(/\{nombre_profesional\}/g, '{{ prof.name }}')
+    .replace(/\{fecha_cita\}/g,         '2026-06-15')
+    .replace(/\{hora_cita\}/g,          '10:00');
+  preview.textContent = txt;
+}
+
+document.getElementById('message_es').addEventListener('input', actualizarPreview);
+document.getElementById('message_en').addEventListener('input', actualizarPreview);
+
+// Inicializar preview al cargar
+actualizarPreview();
+</script>
+{% endblock %}

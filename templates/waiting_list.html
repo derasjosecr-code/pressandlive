@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+{% block title %}{{ t.wl_title if t is defined else 'Lista de espera' }} — PressAndLive{% endblock %}
+
+{% block content %}
+
+<!-- Encabezado -->
+<div class="d-flex align-items-start justify-content-between flex-wrap gap-3 mb-4">
+  <div>
+    <a href="/modulos/agenda-inteligente" class="btn btn-sm btn-outline-secondary fw-semibold mb-2">
+      ← {{ t.wl_back if t is defined else 'Volver al módulo' }}
+    </a>
+    <h1 class="fw-black fs-3 mb-1">⏳ {{ t.wl_title if t is defined else 'Lista de espera' }}</h1>
+    <p class="text-muted small mb-0">
+      {{ t.wl_subtitle if t is defined else 'Clientes que querían reservar y no encontraron turno disponible' }}
+    </p>
+  </div>
+</div>
+
+<!-- ── Filtros + buscador ─────────────────────────────────────────────────── -->
+<div class="d-flex flex-wrap gap-2 align-items-center mb-4">
+
+  <!-- Filtros de estado -->
+  <div class="d-flex gap-2 flex-wrap">
+    {% set filtros = [
+      ('all',       t.wl_filter_all       if t is defined else 'Todos'),
+      ('pending',   t.wl_filter_pending   if t is defined else 'Pendientes'),
+      ('notified',  t.wl_filter_notified  if t is defined else 'Notificados'),
+      ('converted', t.wl_filter_converted if t is defined else 'Convertidos'),
+      ('expired',   t.wl_filter_expired   if t is defined else 'Expirados'),
+    ] %}
+    {% for val, label in filtros %}
+    <a href="/waiting-list?status_fil={{ val }}"
+       class="btn btn-sm fw-semibold {% if status_fil == val %}btn-pal{% else %}btn-outline-secondary{% endif %}">
+      {{ label }}
+    </a>
+    {% endfor %}
+  </div>
+
+  <!-- Buscador JS -->
+  <div class="ms-auto" style="min-width:220px;">
+    <input type="text" id="wl-search" class="form-control form-control-sm"
+           placeholder="{{ t.wl_search_placeholder if t is defined else 'Buscar por nombre o email…' }}"
+           value="{{ q }}" oninput="filterTable()" />
+  </div>
+</div>
+
+<!-- ── Tabla ──────────────────────────────────────────────────────────────── -->
+{% if entries %}
+<div class="card border-0 shadow-sm mb-4" style="border-radius:12px; overflow:hidden;">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0" id="wl-table">
+      <thead style="background:#fff7ed;">
+        <tr>
+          <th class="px-4 py-3 fw-bold small text-uppercase" style="color:#9a3412; letter-spacing:.4px;">
+            {{ t.wl_col_client if t is defined else 'Cliente' }}
+          </th>
+          <th class="py-3 fw-bold small text-uppercase" style="color:#9a3412; letter-spacing:.4px;">
+            {{ t.wl_col_date if t is defined else 'Fecha deseada' }}
+          </th>
+          <th class="py-3 fw-bold small text-uppercase" style="color:#9a3412; letter-spacing:.4px;">
+            {{ t.wl_col_status if t is defined else 'Estado' }}
+          </th>
+          <th class="pe-4 py-3 fw-bold small text-uppercase text-end" style="color:#9a3412; letter-spacing:.4px;">
+            {{ t.wl_col_actions if t is defined else 'Acciones' }}
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in entries %}
+        <tr class="wl-row" data-search="{{ e.client_name|lower }} {{ e.client_email|lower }}">
+
+          <!-- Cliente -->
+          <td class="px-4 py-3">
+            <div class="fw-semibold" style="font-size:.92rem;">{{ e.client_name }}</div>
+            <div class="text-muted" style="font-size:.78rem;">{{ e.client_email }}</div>
+            {% if e.client_phone %}
+            <div class="text-muted" style="font-size:.75rem;">📞 {{ e.client_phone }}</div>
+            {% endif %}
+            <div class="text-muted" style="font-size:.72rem; margin-top:2px;">
+              {{ t.wl_col_date if t is defined else 'Anotado' }}: {{ e.created_at.strftime('%d/%m/%Y') }}
+            </div>
+          </td>
+
+          <!-- Fecha deseada -->
+          <td class="py-3">
+            <span class="fw-semibold" style="font-size:.9rem;">{{ e.desired_date }}</span>
+            {% if e.notified_at %}
+            <div class="text-muted" style="font-size:.72rem;">
+              ✉️ {{ e.notified_at.strftime('%d/%m/%Y %H:%M') }}
+            </div>
+            {% endif %}
+          </td>
+
+          <!-- Estado -->
+          <td class="py-3">
+            {% if e.status == 'pending' %}
+              <span class="badge rounded-pill"
+                    style="background:#fef3c7; color:#92400e; font-size:.72rem; font-weight:600; padding:4px 10px;">
+                ⏳ {{ t.wl_status_pending if t is defined else 'Pendiente' }}
+              </span>
+            {% elif e.status == 'notified' %}
+              <span class="badge rounded-pill"
+                    style="background:#dbeafe; color:#1e40af; font-size:.72rem; font-weight:600; padding:4px 10px;">
+                ✉️ {{ t.wl_status_notified if t is defined else 'Notificado' }}
+              </span>
+            {% elif e.status == 'converted' %}
+              <span class="badge rounded-pill"
+                    style="background:#dcfce7; color:#166534; font-size:.72rem; font-weight:600; padding:4px 10px;">
+                ✅ {{ t.wl_status_converted if t is defined else 'Convertido' }}
+              </span>
+            {% elif e.status == 'expired' %}
+              <span class="badge rounded-pill"
+                    style="background:#f3f4f6; color:#6b7280; font-size:.72rem; font-weight:600; padding:4px 10px;">
+                💨 {{ t.wl_status_expired if t is defined else 'Expirado' }}
+              </span>
+            {% endif %}
+          </td>
+
+          <!-- Acciones -->
+          <td class="pe-4 py-3 text-end">
+            <div class="d-flex gap-2 justify-content-end flex-wrap">
+
+              <!-- Notificar (solo si está pending o notified) -->
+              {% if e.status in ['pending', 'notified'] %}
+              <button class="btn btn-sm btn-pal fw-semibold"
+                      onclick="notificar({{ e.id }}, this)"
+                      title="{{ t.wl_btn_notify if t is defined else 'Notificar' }}">
+                ✉️ {{ t.wl_btn_notify if t is defined else 'Notificar' }}
+              </button>
+              {% endif %}
+
+              <!-- Marcar convertido -->
+              {% if e.status != 'converted' %}
+              <form method="post" action="/waiting-list/{{ e.id }}/estado" class="d-inline">
+                <input type="hidden" name="new_status" value="converted" />
+                <button type="submit" class="btn btn-sm btn-outline-success fw-semibold"
+                        title="{{ t.wl_btn_convert if t is defined else 'Convertido' }}">
+                  ✅
+                </button>
+              </form>
+              {% endif %}
+
+              <!-- Expirar -->
+              {% if e.status not in ['expired', 'converted'] %}
+              <form method="post" action="/waiting-list/{{ e.id }}/estado" class="d-inline">
+                <input type="hidden" name="new_status" value="expired" />
+                <button type="submit" class="btn btn-sm btn-outline-secondary fw-semibold"
+                        title="{{ t.wl_btn_expire if t is defined else 'Expirar' }}">
+                  💨
+                </button>
+              </form>
+              {% endif %}
+
+              <!-- Eliminar -->
+              <form method="post" action="/waiting-list/{{ e.id }}/eliminar" class="d-inline"
+                    onsubmit="return confirm('¿Eliminar esta entrada?')">
+                <button type="submit" class="btn btn-sm btn-outline-danger fw-semibold"
+                        title="{{ t.wl_btn_delete if t is defined else 'Eliminar' }}">
+                  🗑️
+                </button>
+              </form>
+
+            </div>
+
+            <!-- Toast de feedback por AJAX (notificar) -->
+            <div id="toast-{{ e.id }}" class="mt-2 small d-none"></div>
+          </td>
+
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% else %}
+<!-- Sin entradas -->
+<div class="card border-0 shadow-sm text-center p-5 text-muted" style="border-radius:12px;">
+  <div class="fs-2 mb-2">⏳</div>
+  <div>{{ t.wl_empty if t is defined else 'No hay nadie en lista de espera.' }}</div>
+</div>
+{% endif %}
+
+<!-- Nota informativa -->
+<div class="card border-0 p-3 mb-2"
+     style="background:#f8fafc; border-radius:10px; font-size:.82rem; color:#64748b;">
+  💡 {% if lang == 'en' %}
+    Clients join this list automatically when they click "Join waiting list" on your booking page.
+    Click <strong>Notify</strong> to send them an email when a slot is available.
+  {% else %}
+    Los clientes se anotan automáticamente cuando hacen clic en "Lista de espera" en tu página de agenda.
+    Hacé clic en <strong>Notificar</strong> para enviarles un email cuando haya un turno disponible.
+  {% endif %}
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── Buscador en tiempo real ───────────────────────────────────────────────────
+function filterTable() {
+  const q = document.getElementById('wl-search').value.toLowerCase().trim();
+  document.querySelectorAll('.wl-row').forEach(row => {
+    const text = row.dataset.search || '';
+    row.style.display = text.includes(q) ? '' : 'none';
+  });
+}
+
+// ── Notificación por AJAX ─────────────────────────────────────────────────────
+async function notificar(id, btn) {
+  btn.disabled = true;
+  btn.textContent = '⏳';
+  const toast = document.getElementById('toast-' + id);
+  try {
+    const res  = await fetch(`/waiting-list/${id}/notificar`, { method: 'POST' });
+    const data = await res.json();
+    toast.textContent = data.msg;
+    toast.className   = res.ok ? 'mt-2 small text-success' : 'mt-2 small text-danger';
+    toast.classList.remove('d-none');
+    if (res.ok) {
+      // Actualizar badge de estado en la misma fila sin recargar
+      const row   = btn.closest('tr');
+      const badge = row.querySelector('.badge');
+      if (badge) {
+        badge.style.background = '#dbeafe';
+        badge.style.color      = '#1e40af';
+        badge.textContent      = '✉️ {{ t.wl_status_notified if t is defined else "Notificado" }}';
+      }
+      btn.textContent = '✉️ {{ t.wl_btn_notify if t is defined else "Notificar" }}';
+      btn.disabled    = false;
+    }
+  } catch (e) {
+    toast.textContent = '⚠️ Error de red';
+    toast.className   = 'mt-2 small text-danger';
+    toast.classList.remove('d-none');
+    btn.disabled    = false;
+    btn.textContent = '✉️ {{ t.wl_btn_notify if t is defined else "Notificar" }}';
+  }
+}
+</script>
+{% endblock %}

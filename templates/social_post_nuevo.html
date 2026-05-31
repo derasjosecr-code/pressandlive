@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+{% block title %}{{ t.social_new_post_btn }} — PressAndLive{% endblock %}
+
+{% block content %}
+
+<!-- Volver -->
+<div class="mb-4">
+  <a href="/social/posts" class="btn btn-sm btn-outline-secondary fw-semibold">
+    ← {{ t.social_posts_title }}
+  </a>
+</div>
+
+<!-- Encabezado -->
+<div class="d-flex align-items-center gap-3 mb-4">
+  <div class="fs-1 lh-1">✍️</div>
+  <div>
+    <h1 class="fw-black fs-4 mb-0">{{ t.social_new_post_btn }}</h1>
+    <div class="text-muted small">
+      {{ 'Redactá tu publicación y elegí cuándo publicarla.' if lang == 'es' else 'Write your post and choose when to publish it.' }}
+    </div>
+  </div>
+</div>
+
+<!-- Sin cuentas conectadas -->
+{% if not accounts %}
+<div class="alert d-flex align-items-center gap-3"
+     style="background:#fff7ed; border:1.5px solid #fed7aa; border-radius:12px;">
+  <span class="fs-3">📱</span>
+  <div>
+    <div class="fw-bold">{{ t.social_no_accounts_warn }}</div>
+    <a href="/social/accounts" class="btn btn-sm btn-pal mt-2">
+      🔗 {{ t.social_connect_btn }}
+    </a>
+  </div>
+</div>
+
+{% else %}
+
+<!-- Banner modo dev -->
+{% if is_dev %}
+<div class="alert alert-warning d-flex align-items-center gap-2 mb-4"
+     style="border-radius:10px; font-size:.875rem;">
+  <span>🧪</span> {{ t.social_dev_note }}
+</div>
+{% endif %}
+
+<div class="row g-4">
+
+  <!-- Formulario -->
+  <div class="col-lg-7">
+    <form method="post" action="/social/posts/nuevo" id="post-form">
+
+      <!-- Selector de cuenta -->
+      <div class="mb-4">
+        <label class="form-label fw-bold">{{ t.social_account_label }}</label>
+        <div class="d-flex flex-column gap-2">
+          {% for acc in accounts %}
+          {% set pl = platforms.get(acc.platform, {}) %}
+          <label class="d-flex align-items-center gap-3 p-3 rounded-2 border"
+                 style="cursor:pointer; transition:border-color .15s;"
+                 onmouseover="this.style.borderColor='#f97316'"
+                 onmouseout="if(!this.querySelector('input').checked) this.style.borderColor=''">
+            <input type="radio" name="account_id" value="{{ acc.id }}"
+                   {% if loop.first %}checked{% endif %}
+                   required style="accent-color:#f97316;"
+                   onchange="updatePlatformPreview(this, '{{ pl.icon if pl else '🌐' }}', '{{ pl.label if pl else acc.platform }}', '{{ acc.username }}')" />
+            <span style="font-size:1.4rem;">{{ pl.icon if pl else '🌐' }}</span>
+            <div>
+              <div class="fw-semibold" style="font-size:.9rem;">{{ pl.label if pl else acc.platform }}</div>
+              <div class="text-muted small">@{{ acc.username }}</div>
+            </div>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Contenido del post -->
+      <div class="mb-4">
+        <label class="form-label fw-bold">{{ t.social_content_label }}</label>
+        <textarea name="content" id="post-content" class="form-control" rows="5" required
+                  maxlength="2200"
+                  placeholder="{{ 'Escribí tu publicación aquí…' if lang == 'es' else 'Write your post here…' }}"
+                  style="border-radius:10px; resize:vertical; font-size:.95rem;"
+                  oninput="updateCharCount(this)"></textarea>
+        <div class="d-flex justify-content-end mt-1">
+          <span id="char-count" class="text-muted" style="font-size:.78rem;">2200 {{ t.social_chars_left }}</span>
+        </div>
+      </div>
+
+      <!-- URL de imagen -->
+      <div class="mb-4">
+        <label class="form-label fw-bold">{{ t.social_image_label }}</label>
+        <input type="url" name="image_url" id="image-url" class="form-control"
+               placeholder="https://mi-sitio.com/imagen.jpg"
+               style="border-radius:8px;"
+               oninput="previewImage(this.value)" />
+        <div id="img-preview" class="mt-2" style="display:none;">
+          <img id="img-preview-el" src="" alt="preview"
+               style="max-height:140px; border-radius:8px; object-fit:cover;"
+               onerror="document.getElementById('img-preview').style.display='none'" />
+        </div>
+      </div>
+
+      <!-- Cuándo publicar -->
+      <div class="mb-4">
+        <label class="form-label fw-bold">{{ t.social_when_label }}</label>
+        <div class="d-flex gap-3 flex-wrap mb-3">
+          <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+            <input type="radio" name="when" value="now" checked
+                   style="accent-color:#f97316;"
+                   onchange="toggleScheduled(false)" />
+            <span class="fw-semibold">🚀 {{ t.social_publish_now }}</span>
+          </label>
+          <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+            <input type="radio" name="when" value="scheduled"
+                   style="accent-color:#f97316;"
+                   onchange="toggleScheduled(true)" />
+            <span class="fw-semibold">🕒 {{ t.social_schedule_opt }}</span>
+          </label>
+        </div>
+        <!-- Campo fecha/hora (oculto hasta elegir programar) -->
+        <div id="scheduled-block" style="display:none;">
+          <label class="form-label fw-semibold small">{{ t.social_scheduled_at }} *</label>
+          <input type="datetime-local" name="scheduled_at" id="scheduled_at"
+                 class="form-control" style="border-radius:8px; max-width:300px;"
+                 min="{{ datetime.utcnow().strftime('%Y-%m-%dT%H:%M') if datetime is defined else '' }}" />
+        </div>
+      </div>
+
+      <!-- Botón guardar -->
+      <div class="d-grid">
+        <button type="submit" class="btn btn-pal btn-lg fw-bold" style="border-radius:12px;">
+          ✍️ {{ t.social_save_btn }}
+        </button>
+      </div>
+
+    </form>
+  </div>
+
+  <!-- Vista previa -->
+  <div class="col-lg-5">
+    <div class="sticky-top" style="top:80px;">
+      <h2 class="fs-6 fw-bold text-muted text-uppercase mb-2" style="letter-spacing:.05em;">
+        {{ 'Vista previa' if lang == 'es' else 'Preview' }}
+      </h2>
+      <div class="card border-0 shadow-sm" style="border-radius:14px;">
+        <div class="card-body p-4">
+
+          <!-- Cabecera simulada de red social -->
+          <div class="d-flex align-items-center gap-2 mb-3">
+            <div class="d-flex align-items-center justify-content-center rounded-circle"
+                 style="width:40px;height:40px;background:#fed7aa;font-size:1.2rem;">
+              {{ prof.name[0] if prof.name else '?' }}
+            </div>
+            <div>
+              <div class="fw-bold" style="font-size:.88rem;">{{ prof.name }}</div>
+              <div class="text-muted" style="font-size:.75rem;" id="preview-platform">
+                {% set first_acc = accounts[0] %}
+                {% set first_pl = platforms.get(first_acc.platform, {}) %}
+                {{ first_pl.icon if first_pl else '🌐' }} {{ first_pl.label if first_pl else first_acc.platform }}
+                · @{{ first_acc.username }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Texto del post -->
+          <div id="preview-text"
+               style="font-size:.9rem; color:#374151; min-height:60px; white-space:pre-wrap; margin-bottom:.75rem;">
+            <span class="text-muted">{{ 'El texto aparecerá aquí…' if lang == 'es' else 'Text will appear here…' }}</span>
+          </div>
+
+          <!-- Imagen del post -->
+          <div id="preview-image" style="display:none;">
+            <img id="preview-image-el" src="" alt="preview"
+                 style="width:100%; border-radius:10px; object-fit:cover; max-height:200px;"
+                 onerror="document.getElementById('preview-image').style.display='none'" />
+          </div>
+
+          <!-- Pie simulado -->
+          <div class="mt-3 pt-2 d-flex gap-3 text-muted"
+               style="font-size:.78rem; border-top:1px solid #f3f4f6;">
+            <span>👍 0</span>
+            <span>💬 0</span>
+            <span>↗️ 0</span>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Contador de caracteres
+function updateCharCount(el) {
+  const max  = 2200;
+  const left = max - el.value.length;
+  const el2  = document.getElementById('char-count');
+  el2.textContent = left + ' {{ t.social_chars_left }}';
+  el2.style.color = left < 100 ? '#dc2626' : left < 300 ? '#f59e0b' : '#9ca3af';
+
+  // Actualizar vista previa
+  const preview = document.getElementById('preview-text');
+  if (preview) {
+    preview.textContent = el.value || '{{ "El texto aparecerá aquí…" if lang == "es" else "Text will appear here…" }}';
+  }
+}
+
+// Vista previa de imagen
+function previewImage(url) {
+  const block = document.getElementById('preview-image');
+  const el    = document.getElementById('preview-image-el');
+  const block2 = document.getElementById('img-preview');
+  const el2    = document.getElementById('img-preview-el');
+  if (url) {
+    el.src   = url;
+    el2.src  = url;
+    block.style.display  = 'block';
+    block2.style.display = 'block';
+  } else {
+    block.style.display  = 'none';
+    block2.style.display = 'none';
+  }
+}
+
+// Mostrar/ocultar campo de fecha programada
+function toggleScheduled(show) {
+  const block    = document.getElementById('scheduled-block');
+  const input    = document.getElementById('scheduled_at');
+  block.style.display = show ? 'block' : 'none';
+  input.required = show;
+}
+
+// Actualizar vista previa de plataforma al elegir cuenta
+function updatePlatformPreview(radio, icon, label, username) {
+  const el = document.getElementById('preview-platform');
+  if (el) el.textContent = icon + ' ' + label + ' · @' + username;
+}
+
+// Validación antes de enviar
+document.getElementById('post-form')?.addEventListener('submit', function(e) {
+  const content = document.getElementById('post-content').value.trim();
+  if (!content) {
+    e.preventDefault();
+    alert('{{ "Por favor escribí el contenido del post." if lang == "es" else "Please write the post content." }}');
+    return;
+  }
+  const whenScheduled = document.querySelector('input[name="when"]:checked')?.value === 'scheduled';
+  if (whenScheduled && !document.getElementById('scheduled_at').value) {
+    e.preventDefault();
+    alert('{{ "Por favor indicá la fecha y hora de publicación." if lang == "es" else "Please set the publication date and time." }}');
+  }
+});
+</script>
+{% endblock %}

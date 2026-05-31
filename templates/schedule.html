@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}{{ t.schedule_title if t is defined else 'Mis horarios' }} — PressAndLive{% endblock %}
+
+{% block content %}
+
+<div class="mb-4">
+  <h1 class="fw-black fs-3 mb-1">
+    {{ t.schedule_title if t is defined else 'Mis horarios' }}
+  </h1>
+  <p class="text-muted small mb-0">
+    {{ t.schedule_subtitle if t is defined else 'Configurá los días y horas en que atendés clientes' }}
+  </p>
+</div>
+
+<form method="post" action="/schedule">
+
+  <!-- Días de la semana -->
+  <div class="d-flex flex-column gap-2 mb-4">
+  {% for s in sched_list %}
+    {% set i = loop.index0 %}
+    {% set day_name = days[i] %}
+    {% set is_active = s is not none and s.is_active %}
+
+    <div class="card shadow-sm {% if is_active %}border-pal{% endif %}"
+         id="card-{{ i }}"
+         {% if is_active %}style="background:var(--pal-orange-light);"{% endif %}>
+      <div class="card-body d-flex align-items-center gap-3 flex-wrap py-3">
+
+        <!-- Toggle switch -->
+        <label class="pal-switch flex-shrink-0 mb-0">
+          <input type="checkbox"
+                 name="day_{{ i }}"
+                 id="chk-{{ i }}"
+                 {% if is_active %}checked{% endif %}
+                 onchange="toggleDay({{ i }})"/>
+          <span class="pal-slider"></span>
+        </label>
+
+        <!-- Nombre del día -->
+        <span class="fw-bold" style="min-width:110px;">{{ day_name }}</span>
+
+        <!-- Campos de hora -->
+        <div class="time-group d-flex align-items-center gap-2 flex-wrap {% if is_active %}enabled{% endif %}"
+             id="times-{{ i }}">
+          <span class="text-muted small fw-semibold">
+            {{ t.schedule_from if t is defined else 'Desde' }}
+          </span>
+          <input type="time" name="start_{{ i }}"
+                 class="form-control form-control-sm" style="width:130px;"
+                 value="{{ s.start_time if s is not none else '09:00' }}" />
+          <span class="text-muted small fw-semibold">
+            {{ t.schedule_to if t is defined else 'hasta' }}
+          </span>
+          <input type="time" name="end_{{ i }}"
+                 class="form-control form-control-sm" style="width:130px;"
+                 value="{{ s.end_time if s is not none else '17:00' }}" />
+        </div>
+
+      </div>
+    </div>
+  {% endfor %}
+  </div>
+
+  <!-- Duración del turno -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <label class="form-label fw-bold">
+        ⏱ {{ t.schedule_duration if t is defined else 'Duración de cada turno' }}
+      </label>
+      <select name="slot_duration" class="form-select" style="max-width:240px;">
+        <option value="30"  {% if current_duration == 30  %}selected{% endif %}>{{ t.schedule_30min  if t is defined else '30 minutos' }}</option>
+        <option value="45"  {% if current_duration == 45  %}selected{% endif %}>{{ t.schedule_45min  if t is defined else '45 minutos' }}</option>
+        <option value="60"  {% if current_duration == 60  %}selected{% endif %}>{{ t.schedule_60min  if t is defined else '1 hora' }}</option>
+        <option value="90"  {% if current_duration == 90  %}selected{% endif %}>{{ t.schedule_90min  if t is defined else '1 hora 30 min' }}</option>
+        <option value="120" {% if current_duration == 120 %}selected{% endif %}>{{ t.schedule_120min if t is defined else '2 horas' }}</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Botones -->
+  <div class="d-flex gap-3 flex-wrap">
+    <button type="submit" class="btn btn-pal btn-lg px-5">
+      {{ t.schedule_save if t is defined else 'Guardar horarios' }}
+    </button>
+    <a href="/dashboard" class="btn btn-outline-secondary btn-lg">
+      {{ t.schedule_cancel if t is defined else 'Cancelar' }}
+    </a>
+  </div>
+
+</form>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleDay(i) {
+  const chk   = document.getElementById('chk-'   + i);
+  const times = document.getElementById('times-' + i);
+  const card  = document.getElementById('card-'  + i);
+  if (chk.checked) {
+    times.classList.add('enabled');
+    card.classList.add('border-pal');
+    card.style.background = 'var(--pal-orange-light)';
+  } else {
+    times.classList.remove('enabled');
+    card.classList.remove('border-pal');
+    card.style.background = '';
+  }
+}
+</script>
+{% endblock %}

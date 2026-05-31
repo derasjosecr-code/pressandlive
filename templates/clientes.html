@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+{% block title %}{{ t.crm_title if t is defined else 'Base de clientes' }} — PressAndLive{% endblock %}
+
+{% block content %}
+
+<!-- Encabezado -->
+<div class="mb-4">
+  <a href="/modulos/crm-comunicacion" class="btn btn-sm btn-outline-secondary fw-semibold mb-2">
+    ← {{ t.modulo_back if t is defined else 'Volver al módulo' }}
+  </a>
+  <h1 class="fw-black fs-3 mb-1">🗂️ {{ t.crm_title if t is defined else 'Base de clientes' }}</h1>
+  <p class="text-muted small mb-0">{{ t.crm_subtitle if t is defined else 'Historial de todos tus clientes y sus citas' }}</p>
+</div>
+
+{% if clients %}
+
+<!-- Buscador + filtros -->
+<div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+  <input type="text" id="buscador"
+         class="form-control"
+         style="max-width:320px;"
+         placeholder="{{ t.crm_search if t is defined else 'Buscar por nombre, email o teléfono...' }}"
+         oninput="filtrar()">
+
+  <div class="d-flex gap-2 ms-auto flex-wrap">
+    <button class="btn btn-sm btn-pal fw-semibold active-filter" id="f-all"
+            onclick="setFiltro('all')">
+      {{ t.crm_filter_all if t is defined else 'Todos' }}
+      <span class="badge rounded-pill ms-1" style="background:rgba(0,0,0,.15);">{{ clients|length }}</span>
+    </button>
+    <button class="btn btn-sm btn-outline-secondary fw-semibold" id="f-frequent"
+            onclick="setFiltro('frequent')">
+      {{ t.crm_filter_frequent if t is defined else 'Más de 2 citas' }}
+    </button>
+    <button class="btn btn-sm btn-outline-secondary fw-semibold" id="f-inactive"
+            onclick="setFiltro('inactive')">
+      {{ t.crm_filter_inactive if t is defined else 'Sin cita en 30 días' }}
+    </button>
+  </div>
+</div>
+
+<!-- Tabla de clientes -->
+<div class="card border-0 shadow-sm" style="border-radius:12px; overflow:hidden;">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0" id="tabla-clientes">
+      <thead style="background:#fff7ed;">
+        <tr>
+          <th class="px-4 py-3 fw-bold small text-uppercase" style="color:#9a3412; letter-spacing:.4px;">
+            {{ t.crm_col_name if t is defined else 'Cliente' }}
+          </th>
+          <th class="py-3 fw-bold small text-uppercase" style="color:#9a3412; letter-spacing:.4px;">
+            Email
+          </th>
+          <th class="py-3 fw-bold small text-uppercase d-none d-md-table-cell" style="color:#9a3412; letter-spacing:.4px;">
+            {{ 'Teléfono' if lang == 'es' else 'Phone' }}
+          </th>
+          <th class="py-3 fw-bold small text-uppercase text-center" style="color:#9a3412; letter-spacing:.4px; width:80px;">
+            {{ t.crm_col_total if t is defined else 'Citas' }}
+          </th>
+          <th class="py-3 fw-bold small text-uppercase d-none d-sm-table-cell" style="color:#9a3412; letter-spacing:.4px;">
+            {{ t.crm_col_last if t is defined else 'Última cita' }}
+          </th>
+          <th class="pe-4 py-3 text-end" style="width:80px;"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in clients %}
+        <tr class="cliente-row"
+            data-name="{{ c.name | lower }}"
+            data-email="{{ c.email | lower }}"
+            data-phone="{{ c.phone | lower }}"
+            data-total="{{ c.total }}"
+            data-days="{{ c.days_since }}">
+
+          <!-- Nombre + avatar inicial -->
+          <td class="px-4 py-3">
+            <div class="d-flex align-items-center gap-3">
+              <div class="rounded-circle d-flex align-items-center justify-content-center fw-black"
+                   style="width:36px; height:36px; background:#fff7ed; color:#F97316;
+                          font-size:.9rem; flex-shrink:0;">
+                {{ c.name[0].upper() }}
+              </div>
+              <span class="fw-semibold" style="font-size:.9rem;">{{ c.name }}</span>
+            </div>
+          </td>
+
+          <!-- Email -->
+          <td class="py-3" style="font-size:.85rem; color:#6b7280;">{{ c.email }}</td>
+
+          <!-- Teléfono -->
+          <td class="py-3 d-none d-md-table-cell" style="font-size:.85rem; color:#6b7280;">
+            {{ c.phone or '—' }}
+          </td>
+
+          <!-- Total citas -->
+          <td class="py-3 text-center">
+            <span class="fw-black text-pal">{{ c.total }}</span>
+          </td>
+
+          <!-- Última cita + badge de inactividad -->
+          <td class="py-3 d-none d-sm-table-cell" style="font-size:.85rem;">
+            <div>{{ c.last_date }}</div>
+            {% if c.days_since >= 30 %}
+            <div class="badge rounded-pill mt-1"
+                 style="background:#fef3c7; color:#92400e; font-size:.65rem; font-weight:600;">
+              {{ c.days_since }}
+              {{ t.crm_days_ago if t is defined else 'días sin cita' }}
+            </div>
+            {% endif %}
+          </td>
+
+          <!-- Acción -->
+          <td class="pe-4 py-3 text-end">
+            <a href="/clientes/{{ c.cid }}"
+               class="btn btn-sm btn-outline-secondary fw-semibold">
+              {{ t.crm_view if t is defined else 'Ver' }} →
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Mensaje si el filtro no da resultados -->
+<div id="sin-resultados" class="card border-0 bg-white shadow-sm text-center p-4 text-muted mt-3 d-none">
+  <div class="fs-3 mb-2">🔍</div>
+  <div>{{ 'Sin resultados para esa búsqueda.' if lang == 'es' else 'No results for that search.' }}</div>
+</div>
+
+{% else %}
+
+<!-- Sin clientes aún -->
+<div class="card border-0 bg-white shadow-sm text-center p-5 text-muted">
+  <div class="fs-2 mb-2">🗂️</div>
+  <div>{{ t.crm_no_clients if t is defined else 'Todavía no hay clientes. Aparecerán aquí cuando alguien reserve una cita.' }}</div>
+</div>
+
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+let filtroActivo = 'all';
+
+function setFiltro(f) {
+  filtroActivo = f;
+  ['all', 'frequent', 'inactive'].forEach(id => {
+    const btn = document.getElementById('f-' + id);
+    if (btn) {
+      btn.classList.toggle('btn-pal',             id === f);
+      btn.classList.toggle('btn-outline-secondary', id !== f);
+    }
+  });
+  filtrar();
+}
+
+function filtrar() {
+  const q     = (document.getElementById('buscador').value || '').toLowerCase();
+  const rows  = document.querySelectorAll('.cliente-row');
+  let visible = 0;
+
+  rows.forEach(row => {
+    const name  = row.dataset.name;
+    const email = row.dataset.email;
+    const phone = row.dataset.phone;
+    const total = parseInt(row.dataset.total);
+    const days  = parseInt(row.dataset.days);
+
+    const matchSearch  = !q || name.includes(q) || email.includes(q) || phone.includes(q);
+    const matchFiltro  = filtroActivo === 'all'
+                       || (filtroActivo === 'frequent'  && total > 2)
+                       || (filtroActivo === 'inactive'  && days >= 30);
+
+    const show = matchSearch && matchFiltro;
+    row.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+
+  const noRes = document.getElementById('sin-resultados');
+  if (noRes) noRes.classList.toggle('d-none', visible > 0);
+}
+</script>
+{% endblock %}

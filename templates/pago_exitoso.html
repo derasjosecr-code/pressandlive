@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}{{ t.payment_success_title if t is defined else '¡Pago exitoso!' }} — PressAndLive{% endblock %}
+
+{% block content %}
+
+<div class="text-center py-4">
+
+  <!-- Ícono de éxito -->
+  <div class="mb-4">
+    <div style="width:80px;height:80px;background:#dcfce7;border-radius:50%;
+                display:flex;align-items:center;justify-content:center;
+                margin:0 auto;font-size:2.5rem;">
+      ✅
+    </div>
+  </div>
+
+  <!-- Título -->
+  <h1 class="fw-black fs-2 mb-2">
+    {{ t.payment_success_title if t is defined else '¡Pago exitoso!' }}
+  </h1>
+  <p class="text-muted mb-4" style="font-size:1rem;">
+    {{ t.payment_success_subtitle if t is defined else 'Tus módulos ya están activos en tu panel.' }}
+  </p>
+
+  {% if modules_activated %}
+  <!-- Módulos activados -->
+  <div class="card border-0 shadow-sm text-start mx-auto mb-4" style="max-width:480px;">
+    <div class="card-body p-4">
+      <div class="text-uppercase fw-bold small text-muted mb-3" style="letter-spacing:.5px;">
+        {{ t.payment_success_modules if t is defined else 'Módulos activados:' }}
+      </div>
+      <div class="d-flex flex-column gap-2">
+        {% for mod in modules_activated %}
+        <div class="d-flex align-items-center gap-2">
+          <span style="font-size:1.3rem;">{{ mod.icon }}</span>
+          <span class="fw-semibold">
+            {% if lang == 'en' %}{{ mod.name_en }}{% else %}{{ mod.name_es }}{% endif %}
+          </span>
+          <span class="ms-auto badge rounded-pill"
+                style="background:#dcfce7;color:#166534;">
+            ✓ Activo
+          </span>
+        </div>
+        {% endfor %}
+      </div>
+
+      {% if payment %}
+      <hr class="my-3"/>
+      <div class="d-flex justify-content-between text-muted small">
+        <span>Total pagado</span>
+        <span class="fw-bold text-dark">${{ (payment.amount_cents // 100) }}/mes</span>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- CTA -->
+  <a href="/dashboard" class="btn btn-pal fw-bold px-5 py-3 fs-6">
+    {{ t.payment_success_cta if t is defined else 'Ir al dashboard →' }}
+  </a>
+
+</div>
+
+{% endblock %}

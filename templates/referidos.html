@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block title %}{{ t.ref_title }} — PressAndLive{% endblock %}
+
+{% block content %}
+
+<!-- Cabecera -->
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
+  <div>
+    <a href="/modulos/marketing-automation" class="btn btn-sm btn-outline-secondary fw-semibold mb-2">
+      {{ t.ref_back }}
+    </a>
+    <h1 class="fw-black fs-3 mb-1">🤝 {{ t.ref_title }}</h1>
+    <p class="text-muted small mb-0">{{ t.ref_subtitle }}</p>
+  </div>
+  <a href="/referidos/config" class="btn btn-pal fw-bold px-4">
+    ⚙️ {{ t.ref_config_btn }}
+  </a>
+</div>
+
+{% if request.query_params.get('saved') %}
+<div class="alert alert-success alert-dismissible fade show py-2 small mb-3" role="alert">
+  ✅ {{ t.ref_saved }}
+  <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+<!-- Estado del programa -->
+<div class="row g-3 mb-4">
+
+  <!-- Estado -->
+  <div class="col-12 col-md-4">
+    <div class="card border-0 shadow-sm h-100 text-center p-4" style="border-radius:14px;">
+      <div class="fs-2 mb-2">
+        {% if program and program.is_active %}🟢{% else %}⚪{% endif %}
+      </div>
+      <div class="fw-bold mb-1">
+        {% if program and program.is_active %}
+          {{ t.ref_status_active }}
+        {% else %}
+          {{ t.ref_status_inactive }}
+        {% endif %}
+      </div>
+      {% if program and program.is_active %}
+      <div class="small text-muted">
+        {% if program.discount_type == 'percent' %}
+          {{ t.ref_referrer_disc }}: <strong>{{ program.referrer_discount | int }}%</strong><br>
+          {{ t.ref_referee_disc }}: <strong>{{ program.referee_discount | int }}%</strong>
+        {% else %}
+          {{ t.ref_referrer_disc }}: <strong>{{ program.referrer_discount }}</strong><br>
+          {{ t.ref_referee_disc }}: <strong>{{ program.referee_discount }}</strong>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Total referidos -->
+  <div class="col-12 col-md-4">
+    <div class="card border-0 shadow-sm h-100 text-center p-4" style="border-radius:14px;">
+      <div class="fw-black fs-1 lh-1 mb-1" style="color:#9a3412;">{{ total }}</div>
+      <div class="fw-semibold small text-muted">{{ t.ref_stats_total }}</div>
+    </div>
+  </div>
+
+  <!-- Recompensas -->
+  <div class="col-12 col-md-4">
+    <div class="card border-0 shadow-sm h-100 text-center p-4" style="border-radius:14px;">
+      <div class="fw-black fs-1 lh-1 mb-1" style="color:#15803d;">{{ rewarded }}</div>
+      <div class="fw-semibold small text-muted">{{ t.ref_stats_rewarded }}</div>
+      {% if pending > 0 %}
+      <div class="small text-muted mt-1">
+        {{ pending }} {{ t.ref_stats_pending }}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Cómo funciona (si el programa no está configurado) -->
+{% if not program %}
+<div class="card border-0 shadow-sm p-4 mb-4 text-center" style="border-radius:14px; background:#fffbf5;">
+  <div class="fs-2 mb-3">🤝</div>
+  <h3 class="fw-bold fs-5 mb-2">
+    {{ 'Todavía no configuraste el programa' if lang == 'es' else 'You haven\'t configured the program yet' }}
+  </h3>
+  <p class="text-muted small mb-4" style="max-width:45ch; margin:auto;">
+    {% if lang == 'es' %}
+    Configurá los descuentos y activá el programa para que tus clientes puedan empezar a recomendar.
+    {% else %}
+    Set up the discounts and activate the program so your clients can start referring others.
+    {% endif %}
+  </p>
+  <a href="/referidos/config" class="btn btn-pal fw-bold px-4" style="display:inline-block; width:fit-content; margin:auto;">
+    ⚙️ {{ t.ref_config_btn }}
+  </a>
+</div>
+
+{% elif not program.is_active %}
+<div class="alert alert-warning py-3 mb-4" style="border-radius:12px;">
+  ⚠️
+  {% if lang == 'es' %}
+  El programa de referidos está <strong>inactivo</strong>. Activalo en la configuración.
+  {% else %}
+  The referral program is <strong>inactive</strong>. Activate it in the configuration.
+  {% endif %}
+  <a href="/referidos/config" class="alert-link ms-2">{{ t.ref_config_btn }}</a>
+</div>
+{% endif %}
+
+<!-- Lista de referidos -->
+{% if referrals %}
+<h2 class="fs-5 fw-bold mb-3">
+  {{ 'Historial de referidos' if lang == 'es' else 'Referral history' }}
+</h2>
+<div class="card border-0 shadow-sm" style="border-radius:14px; overflow:hidden;">
+  <table class="table table-hover mb-0">
+    <thead style="background:#fff7ed;">
+      <tr>
+        <th class="px-4 py-3 fw-bold" style="font-size:.82rem; color:#9a3412; border:none;">
+          {{ t.ref_col_referrer }}
+        </th>
+        <th class="px-4 py-3 fw-bold" style="font-size:.82rem; color:#9a3412; border:none;">
+          {{ t.ref_col_referee }}
+        </th>
+        <th class="px-4 py-3 fw-bold" style="font-size:.82rem; color:#9a3412; border:none;">
+          {{ t.ref_col_date }}
+        </th>
+        <th class="px-4 py-3 fw-bold" style="font-size:.82rem; color:#9a3412; border:none;">
+          {{ t.ref_col_status }}
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in referrals %}
+      <tr>
+        <td class="px-4 py-3 align-middle">
+          <div class="fw-semibold" style="font-size:.92rem;">{{ r.referrer_name }}</div>
+          <div class="text-muted small">{{ r.referrer_email }}</div>
+        </td>
+        <td class="px-4 py-3 align-middle">
+          <div class="fw-semibold" style="font-size:.92rem;">{{ r.referee_name }}</div>
+          <div class="text-muted small">{{ r.referee_email }}</div>
+        </td>
+        <td class="px-4 py-3 align-middle text-muted small">
+          {{ r.created_at.strftime('%d/%m/%Y') }}
+        </td>
+        <td class="px-4 py-3 align-middle">
+          {% if r.status == 'rewarded' %}
+          <span class="badge rounded-pill"
+                style="background:#f0fdf4;color:#15803d;font-weight:600;font-size:.75rem;padding:5px 12px;">
+            ✅ {{ t.ref_status_rewarded }}
+          </span>
+          {% else %}
+          <span class="badge rounded-pill"
+                style="background:#fff7ed;color:#9a3412;font-weight:600;font-size:.75rem;padding:5px 12px;">
+            ⏳ {{ t.ref_status_pending }}
+          </span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% else %}
+<div class="card border-0 bg-white shadow-sm text-center p-5 text-muted" style="border-radius:14px;">
+  <div class="fs-2 mb-2">🤝</div>
+  <div>{{ t.ref_empty }}</div>
+</div>
+{% endif %}
+
+{% endblock %}

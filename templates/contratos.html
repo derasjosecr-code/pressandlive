@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+{% block title %}{{ t.ct_title if t is defined else 'Contratos digitales' }} — PressAndLive{% endblock %}
+
+{% block content %}
+
+<!-- Cabecera -->
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
+  <div>
+    <a href="/modulos/contratos-firma" class="btn btn-sm btn-outline-secondary fw-semibold mb-2">
+      {{ t.ct_back if t is defined else '← Volver al módulo' }}
+    </a>
+    <h1 class="fw-black fs-3 mb-1">
+      📝 {{ t.ct_title if t is defined else 'Contratos digitales' }}
+    </h1>
+    <p class="text-muted small mb-0">
+      {{ t.ct_subtitle if t is defined else 'Creá, enviá y gestioná contratos con firma digital' }}
+    </p>
+  </div>
+  <a href="/contratos/nuevo" class="btn btn-pal fw-bold px-4">
+    {{ t.ct_new_btn if t is defined else '+ Nuevo contrato' }}
+  </a>
+</div>
+
+<!-- Filtros de estado -->
+<div class="d-flex flex-wrap gap-2 mb-4">
+  {% set filters = [
+    ('',         t.ct_filter_all     if t is defined else 'Todos'),
+    ('draft',    t.ct_filter_draft   if t is defined else 'Borradores'),
+    ('sent',     t.ct_filter_sent    if t is defined else 'Enviados'),
+    ('signed',   t.ct_filter_signed  if t is defined else 'Firmados'),
+    ('expired',  t.ct_filter_expired if t is defined else 'Expirados'),
+  ] %}
+  {% for val, label in filters %}
+  <a href="/contratos{% if val %}?status_fil={{ val }}{% endif %}"
+     class="btn btn-sm fw-semibold {% if status_fil == val %}btn-pal{% else %}btn-outline-secondary{% endif %}">
+    {{ label }}
+  </a>
+  {% endfor %}
+</div>
+
+<!-- Buscador JS -->
+<div class="mb-3">
+  <input type="text" id="ct-search" class="form-control"
+         placeholder="{{ 'Buscar por título o cliente…' if lang == 'es' else 'Search by title or client…' }}"
+         oninput="filterContracts()" style="max-width:400px;" />
+</div>
+
+<!-- Lista de contratos -->
+{% if contracts %}
+<div class="card border-0 shadow-sm" style="border-radius:14px; overflow:hidden;">
+  <table class="table table-hover mb-0" id="ct-table">
+    <thead style="background:#fff7ed;">
+      <tr>
+        <th class="px-4 py-3 fw-bold" style="font-size:.82rem; color:#9a3412; border:none;">
+          {{ t.ct_col_title if t is defined else 'Título' }}
+        </th>
+        <th class="px-4 py-3 fw-bold" style="font-size:.82rem; color:#9a3412; border:none;">
+          {{ t.ct_col_client if t is defined else 'Cliente' }}
+        </th>
+        <th class="px-4 py-3 fw-bold" style="font-size:.82rem; color:#9a3412; border:none;">
+          {{ t.ct_col_status if t is defined else 'Estado' }}
+        </th>
+        <th class="px-4 py-3 fw-bold" style="font-size:.82rem; color:#9a3412; border:none;">
+          {{ t.ct_col_date if t is defined else 'Fecha' }}
+        </th>
+        <th class="px-4 py-3 fw-bold" style="font-size:.82rem; color:#9a3412; border:none;">
+          {{ t.ct_col_actions if t is defined else 'Acciones' }}
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in contracts %}
+      <tr class="ct-row"
+          data-search="{{ c.title|lower }} {{ c.client_name|lower }} {{ c.client_email|lower }}">
+        <td class="px-4 py-3 align-middle">
+          <div class="fw-semibold" style="font-size:.92rem;">{{ c.title }}</div>
+          {% if c.status == 'signed' %}
+          <div class="text-muted small">
+            {{ t.ct_signed_on if t is defined else 'Firmado el' }}
+            {{ c.signed_at.strftime('%d/%m/%Y') if c.signed_at else '' }}
+          </div>
+          {% elif c.status == 'sent' and c.sent_at %}
+          <div class="text-muted small">
+            {{ t.ct_sent_on if t is defined else 'Enviado el' }}
+            {{ c.sent_at.strftime('%d/%m/%Y') if c.sent_at else '' }}
+          </div>
+          {% endif %}
+        </td>
+        <td class="px-4 py-3 align-middle">
+          <div class="fw-semibold small">{{ c.client_name }}</div>
+          <div class="text-muted" style="font-size:.78rem;">{{ c.client_email }}</div>
+        </td>
+        <td class="px-4 py-3 align-middle">
+          {% if c.status == 'draft' %}
+            <span class="badge rounded-pill"
+                  style="background:#f3f4f6;color:#374151;font-weight:600;font-size:.75rem;padding:5px 12px;">
+              {{ t.ct_status_draft if t is defined else 'Borrador' }}
+            </span>
+          {% elif c.status == 'sent' %}
+            <span class="badge rounded-pill"
+                  style="background:#eff6ff;color:#1d4ed8;font-weight:600;font-size:.75rem;padding:5px 12px;">
+              {{ t.ct_status_sent if t is defined else 'Enviado' }}
+            </span>
+          {% elif c.status == 'signed' %}
+            <span class="badge rounded-pill"
+                  style="background:#f0fdf4;color:#15803d;font-weight:600;font-size:.75rem;padding:5px 12px;">
+              {{ t.ct_status_signed if t is defined else 'Firmado ✅' }}
+            </span>
+          {% elif c.status == 'expired' %}
+            <span class="badge rounded-pill"
+                  style="background:#fef2f2;color:#dc2626;font-weight:600;font-size:.75rem;padding:5px 12px;">
+              {{ t.ct_status_expired if t is defined else 'Expirado' }}
+            </span>
+          {% endif %}
+        </td>
+        <td class="px-4 py-3 align-middle text-muted small">
+          {{ c.created_at.strftime('%d/%m/%Y') }}
+        </td>
+        <td class="px-4 py-3 align-middle">
+          <div class="d-flex gap-2 flex-wrap">
+
+            <!-- Ver contrato -->
+            <a href="/contratos/{{ c.id }}/ver"
+               class="btn btn-sm btn-outline-secondary fw-semibold" style="font-size:.78rem;">
+              {{ t.ct_btn_view if t is defined else 'Ver contrato' }}
+            </a>
+
+            <!-- Enviar (solo borradores) -->
+            {% if c.status == 'draft' %}
+            <form method="post" action="/contratos/{{ c.id }}/enviar" class="m-0"
+                  onsubmit="return confirm('{{ t.ct_send_confirm }}')">
+              <button type="submit"
+                      class="btn btn-sm btn-pal fw-semibold" style="font-size:.78rem;">
+                📤 {{ t.ct_btn_send if t is defined else 'Enviar' }}
+              </button>
+            </form>
+
+            <!-- Eliminar (solo borradores) -->
+            <form method="post" action="/contratos/{{ c.id }}/eliminar" class="m-0"
+                  onsubmit="return confirm('{{ t.ct_delete_confirm }}')">
+              <button type="submit"
+                      class="btn btn-sm btn-outline-danger fw-semibold" style="font-size:.78rem;">
+                🗑 {{ t.ct_btn_delete if t is defined else 'Eliminar' }}
+              </button>
+            </form>
+            {% endif %}
+
+            <!-- Firma del cliente (si está firmado) -->
+            {% if c.status == 'signed' and c.signature_data %}
+            <span class="text-muted small align-self-center"
+                  style="font-style:italic; font-size:.78rem;">
+              ✍️ {{ c.signature_data }}
+            </span>
+            {% endif %}
+
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Sin resultados (JS) -->
+<div id="ct-no-results" class="d-none text-center py-5 text-muted">
+  <div class="fs-2 mb-2">🔍</div>
+  <div>{{ 'No se encontraron contratos.' if lang == 'es' else 'No contracts found.' }}</div>
+</div>
+
+{% else %}
+<!-- Sin contratos (servidor) -->
+<div class="card border-0 bg-white shadow-sm text-center p-5 text-muted" style="border-radius:14px;">
+  <div class="fs-2 mb-2">📝</div>
+  <div class="mb-3">{{ t.ct_empty if t is defined else 'Todavía no creaste ningún contrato.' }}</div>
+  <a href="/contratos/nuevo" class="btn btn-pal fw-semibold px-4" style="display:inline-block; width:fit-content; margin:auto;">
+    {{ t.ct_new_btn if t is defined else '+ Nuevo contrato' }}
+  </a>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function filterContracts() {
+  const q   = document.getElementById('ct-search').value.toLowerCase().trim();
+  const rows = document.querySelectorAll('.ct-row');
+  let visible = 0;
+  rows.forEach(r => {
+    const show = !q || (r.dataset.search || '').includes(q);
+    r.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+  const noRes = document.getElementById('ct-no-results');
+  if (noRes) noRes.classList.toggle('d-none', visible > 0);
+}
+</script>
+{% endblock %}

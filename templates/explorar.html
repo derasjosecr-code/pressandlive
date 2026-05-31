@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="{{ lang | default('es') }}">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ t.explore_title if t is defined else 'Explorar profesionales' }} — PressAndLive</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+  <style>
+    body { background: #f8f9fa; }
+
+    /* ── Hero ── */
+    .explore-hero {
+      background: linear-gradient(135deg, #F97316 0%, #c05000 100%);
+      color: #fff;
+      padding: 56px 0 48px;
+      margin-bottom: 36px;
+    }
+
+    /* ── Tarjetas de profesional ── */
+    .prof-card {
+      border-radius: 14px;
+      border: 1.5px solid #e5e7eb;
+      background: #fff;
+      transition: box-shadow .15s, transform .15s;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    .prof-card:hover {
+      box-shadow: 0 8px 24px rgba(0,0,0,.10);
+      transform: translateY(-2px);
+    }
+    .prof-avatar-lg {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: var(--pal-orange);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; font-weight: 900; color: #fff;
+      flex-shrink: 0;
+    }
+
+    /* ── Filtros ── */
+    .filter-pill {
+      border-radius: 20px;
+      border: 1.5px solid #dee2e6;
+      background: #fff;
+      padding: 5px 16px;
+      font-size: .82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .12s;
+      white-space: nowrap;
+    }
+    .filter-pill:hover,
+    .filter-pill.active {
+      background: var(--pal-orange);
+      border-color: var(--pal-orange);
+      color: #fff;
+    }
+
+    /* ── Navbar simple ── */
+    .explore-nav {
+      background: #fff;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 12px 0;
+    }
+
+    /* ── Footer ── */
+    .explore-footer {
+      text-align: center;
+      font-size: .8rem;
+      color: #9ca3af;
+      padding: 32px 0;
+    }
+    .explore-footer a { color: var(--pal-orange); text-decoration: none; font-weight: 700; }
+  </style>
+</head>
+<body>
+
+<!-- ── Navbar mínimo ──────────────────────────────────────────────────────── -->
+<nav class="explore-nav">
+  <div class="container d-flex align-items-center justify-content-between">
+    <a href="/" class="d-flex align-items-center gap-2 text-decoration-none">
+      <div style="position:relative;width:32px;height:32px;display:inline-block;">
+        <div style="position:absolute;bottom:0;left:0;width:32px;height:29px;background:#c05000;border-radius:7px;"></div>
+        <div style="position:absolute;top:0;left:0;width:32px;height:27px;background:#f97316;border-radius:7px;display:flex;align-items:center;justify-content:center;">
+          <div style="width:8px;height:8px;background:#fff;border-radius:50%;opacity:.9;"></div>
+        </div>
+      </div>
+      <span class="brand-text" style="font-size:1.1rem;">Press<span>&amp; Live</span></span>
+    </a>
+    <div class="d-flex align-items-center gap-2">
+      <!-- Selector de idioma -->
+      <div class="d-flex gap-1">
+        <form method="post" action="/set-lang/es" class="m-0">
+          <button type="submit"
+            class="btn btn-sm {% if lang == 'es' %}btn-pal{% else %}btn-outline-secondary{% endif %} px-2 py-1"
+            style="font-size:.75rem;">🇪🇸 ES</button>
+        </form>
+        <form method="post" action="/set-lang/en" class="m-0">
+          <button type="submit"
+            class="btn btn-sm {% if lang == 'en' %}btn-pal{% else %}btn-outline-secondary{% endif %} px-2 py-1"
+            style="font-size:.75rem;">🇬🇧 EN</button>
+        </form>
+      </div>
+      <a href="/" class="btn btn-sm btn-outline-secondary fw-semibold">
+        {{ 'Iniciar sesión' if lang == 'es' else 'Log in' }}
+      </a>
+      <a href="/register" class="btn btn-sm btn-pal fw-semibold">
+        {{ 'Registrate gratis' if lang == 'es' else 'Sign up free' }}
+      </a>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Hero ──────────────────────────────────────────────────────────────── -->
+<div class="explore-hero">
+  <div class="container">
+    <h1 class="fw-black mb-2" style="font-size:2.2rem;">
+      {{ t.explore_title if t is defined else 'Explorar profesionales' }}
+    </h1>
+    <p class="mb-4" style="opacity:.9; font-size:1.05rem;">
+      {{ t.explore_subtitle if t is defined else 'Encontrá profesionales en tu país' }}
+    </p>
+
+    <!-- Buscador principal -->
+    <div class="input-group" style="max-width:560px;">
+      <span class="input-group-text bg-white border-end-0" style="border-radius:10px 0 0 10px;">🔍</span>
+      <input type="text" id="search-input" class="form-control border-start-0"
+             placeholder="{{ t.explore_search_placeholder if t is defined else 'Buscar por nombre, especialidad o ciudad…' }}"
+             value="{{ q }}"
+             oninput="filterCards()"
+             style="border-radius:0 10px 10px 0; font-size:.95rem; padding:12px 16px;" />
+    </div>
+  </div>
+</div>
+
+<div class="container pb-5">
+
+  <!-- ── Filtros de país ────────────────────────────────────────────────── -->
+  <div class="d-flex flex-wrap gap-2 mb-4 align-items-center">
+    <a href="/explorar{% if q %}?q={{ q }}{% endif %}"
+       class="filter-pill {% if not pais_sel %}active{% endif %} text-decoration-none">
+      🌎 {{ t.explore_filter_all if t is defined else 'Todos los países' }}
+    </a>
+    {% for country in all_countries %}
+    <a href="/explorar?pais={{ country|urlencode }}{% if q %}&q={{ q }}{% endif %}"
+       class="filter-pill {% if pais_sel == country %}active{% endif %} text-decoration-none">
+      {{ country }}
+    </a>
+    {% endfor %}
+  </div>
+
+  <!-- Contador de resultados -->
+  <div class="text-muted small mb-3" id="result-count">
+    {% if profs %}
+      {{ profs|length }} {{ 'profesionales encontrados' if lang == 'es' else 'professionals found' }}
+    {% endif %}
+  </div>
+
+  <!-- ── Grilla de tarjetas ──────────────────────────────────────────────── -->
+  {% if profs %}
+  <div class="row g-3" id="prof-grid">
+    {% for p in profs %}
+    <div class="col-12 col-sm-6 col-lg-4 prof-item"
+         data-search="{{ p.name|lower }} {{ (p.specialty or '')|lower }} {{ (p.city or '')|lower }} {{ (p.country or '')|lower }}">
+
+      <a href="/profesional/{{ p.slug }}" class="prof-card p-4">
+
+        <!-- Cabecera -->
+        <div class="d-flex align-items-center gap-3 mb-3">
+          {% if p.avatar_url %}
+          <img src="{{ p.avatar_url }}" alt="{{ p.name }}"
+               class="prof-avatar-lg"
+               style="object-fit:cover;"
+               onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+          <div class="prof-avatar-lg" style="display:none;">{{ p.name[0] }}</div>
+          {% else %}
+          <div class="prof-avatar-lg">{{ p.name[0] }}</div>
+          {% endif %}
+          <div class="flex-grow-1 min-w-0">
+            <div class="fw-black" style="font-size:.98rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+              {{ p.name }}
+            </div>
+            {% if p.specialty %}
+            <div class="text-muted small" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+              {{ p.specialty }}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Ubicación con bandera -->
+        {% if p.country %}
+        <div class="text-muted small mb-2">
+          {% set flag = get_country_flag(p.country) %}
+          {{ flag }} {{ p.country }}{% if p.city %} · {{ p.city }}{% endif %}
+        </div>
+        {% elif p.city %}
+        <div class="text-muted small mb-2">📍 {{ p.city }}</div>
+        {% endif %}
+
+        <!-- Badge agenda online -->
+        {% if p.id in agenda_ids %}
+        <div class="mb-3">
+          <span class="badge rounded-pill"
+                style="background:#dcfce7; color:#166534; font-size:.72rem; font-weight:600; padding:4px 10px;">
+            📅 {{ t.explore_badge_online if t is defined else 'Acepta citas online' }}
+          </span>
+        </div>
+        {% endif %}
+
+        <!-- CTA -->
+        <div class="mt-auto pt-2">
+          <span class="fw-semibold small text-pal">
+            {{ t.explore_btn_profile if t is defined else 'Ver perfil →' }}
+          </span>
+        </div>
+
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Sin resultados (JS) -->
+  <div id="no-results" class="d-none text-center py-5 text-muted">
+    <div class="fs-2 mb-2">🔍</div>
+    <div>{{ t.explore_empty if t is defined else 'No se encontraron profesionales con esos filtros.' }}</div>
+  </div>
+
+  {% else %}
+  <!-- Sin resultados (servidor) -->
+  <div class="text-center py-5 text-muted">
+    <div class="fs-2 mb-2">🔍</div>
+    <div>{{ t.explore_empty if t is defined else 'No se encontraron profesionales con esos filtros.' }}</div>
+    <a href="/explorar" class="btn btn-pal mt-3 fw-semibold">
+      {{ 'Ver todos' if lang == 'es' else 'See all' }}
+    </a>
+  </div>
+  {% endif %}
+
+</div>
+
+<!-- ── Footer ─────────────────────────────────────────────────────────────── -->
+<div class="explore-footer">
+  <p class="mb-1">
+    ¿Sos profesional?
+    <a href="/register">{{ 'Registrate gratis en PressAndLive' if lang == 'es' else 'Sign up for free on PressAndLive' }}</a>
+    {{ 'y aparecé en este directorio.' if lang == 'es' else 'and appear in this directory.' }}
+  </p>
+  <p>© 2026 <a href="/">PressAndLive</a></p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ── Buscador JS en tiempo real ─────────────────────────────────────────────
+function filterCards() {
+  const q     = document.getElementById('search-input').value.toLowerCase().trim();
+  const items = document.querySelectorAll('.prof-item');
+  let   visible = 0;
+
+  items.forEach(item => {
+    const text = item.dataset.search || '';
+    const show = !q || text.includes(q);
+    item.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+
+  const counter  = document.getElementById('result-count');
+  const noResult = document.getElementById('no-results');
+  if (counter)  counter.textContent = visible + ' {{ "profesionales encontrados" if lang == "es" else "professionals found" }}';
+  if (noResult) noResult.classList.toggle('d-none', visible > 0);
+}
+
+// Inicializar si hay query pre-cargada
+document.addEventListener('DOMContentLoaded', () => {
+  if (document.getElementById('search-input').value) filterCards();
+});
+</script>
+</body>
+</html>

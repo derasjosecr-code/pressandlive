@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+{% block title %}{{ t.pedit_title if t is defined else 'Editar perfil' }} — PressAndLive{% endblock %}
+
+{% block content %}
+
+{% if saved %}
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+  {{ t.pedit_saved if t is defined else '✅ ¡Perfil actualizado correctamente!' }}
+  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+<!-- Cabecera -->
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
+  <div>
+    <h1 class="fw-black fs-3 mb-1">
+      {{ t.pedit_title if t is defined else 'Editar perfil público' }}
+    </h1>
+    <p class="text-muted small mb-0">
+      {{ t.pedit_subtitle if t is defined else 'Esta información aparece en tu página pública de profesional' }}
+    </p>
+  </div>
+  <a href="/profesional/{{ prof.slug }}" target="_blank"
+     class="btn btn-sm btn-outline-secondary fw-semibold">
+    {{ t.pedit_view_public if t is defined else 'Ver perfil público →' }}
+  </a>
+</div>
+
+<div class="row g-4">
+
+  <!-- ── Formulario principal ────────────────────────────────────────────────── -->
+  <div class="col-12 col-lg-7">
+    <div class="card border-0 shadow-sm" style="border-radius:14px;">
+      <div class="card-body p-4">
+
+        <form method="post" action="/perfil/editar" id="pedit-form" enctype="multipart/form-data">
+
+          <!-- Nombre -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">
+              {{ t.pedit_name if t is defined else 'Nombre completo' }} *
+            </label>
+            <input type="text" name="name" class="form-control"
+                   value="{{ prof.name }}" required />
+          </div>
+
+          <!-- Profesión o especialidad -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">
+              {{ t.pedit_specialty if t is defined else 'Profesión o especialidad' }}
+            </label>
+            <input type="text" name="specialty" class="form-control"
+                   value="{{ prof.specialty or '' }}"
+                   placeholder="{{ 'Ej: Médico pediatra, Mecánico de motos, Profe de inglés…' if lang == 'es' else 'e.g. Pediatrician, Mechanic, English teacher…' }}" />
+            <div class="form-text">
+              {{ 'Aparece en tu perfil público para que tus clientes sepan a qué te dedicás.' if lang == 'es' else 'Shown on your public profile so clients know what you do.' }}
+            </div>
+          </div>
+
+          <!-- Tipo de negocio -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">
+              {{ 'Tipo de negocio' if lang == 'es' else 'Business type' }}
+            </label>
+            <select name="business_type" class="form-select">
+              {% for bt in business_types %}
+              <option value="{{ bt.key }}"
+                {% if (prof.business_type or 'otro') == bt.key %}selected{% endif %}>
+                {{ bt.label_es if lang == 'es' else bt.label_en }}
+              </option>
+              {% endfor %}
+            </select>
+            <div class="form-text">
+              {{ 'Esto personaliza el vocabulario de tu agenda (cita, sesión, turno, etc.)' if lang == 'es' else 'This customizes the vocabulary in your schedule (appointment, session, shift, etc.)' }}
+            </div>
+          </div>
+
+          <!-- Biografía -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">
+              {{ t.pedit_bio if t is defined else 'Descripción / Biografía' }}
+            </label>
+            <textarea name="bio" class="form-control" rows="5"
+                      placeholder="{{ t.pedit_bio_placeholder if t is defined else 'Contá brevemente quién sos, tu experiencia y cómo ayudás a tus clientes…' }}"
+                      oninput="updatePreview()">{{ prof.bio or '' }}</textarea>
+            <div class="form-text">
+              {{ 'Aparece en tu página pública. Máximo 600 caracteres recomendados.' if lang == 'es'
+                 else 'Appears on your public page. 600 characters recommended.' }}
+            </div>
+          </div>
+
+          <!-- País -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">
+              {{ t.pedit_country if t is defined else 'País' }}
+            </label>
+            <select name="country" class="form-select" id="sel-country">
+              <option value="">
+                {{ t.pedit_country_hint if t is defined else '— Seleccioná tu país —' }}
+              </option>
+              {% if countries is defined %}
+                {% for c in countries %}
+                <option value="{{ c.name }}"
+                  {% if prof.country == c.name %}selected{% endif %}>
+                  {{ c.flag }} {{ c.name }}
+                </option>
+                {% endfor %}
+              {% endif %}
+            </select>
+          </div>
+
+          <!-- Ciudad -->
+          <div class="mb-4">
+            <label class="form-label fw-semibold small">
+              {{ t.pedit_city if t is defined else 'Ciudad (opcional)' }}
+            </label>
+            <input type="text" name="city" class="form-control"
+                   value="{{ prof.city or '' }}"
+                   placeholder="{{ t.pedit_city_hint if t is defined else 'Ej: San José, Medellín, Ciudad de México…' }}" />
+          </div>
+
+          <!-- Foto de perfil -->
+          <div class="mb-4">
+            <label class="form-label fw-semibold small">
+              {{ 'Foto de perfil' if lang == 'es' else 'Profile photo' }}
+            </label>
+            <input type="file" name="avatar_file" id="avatar-file-input"
+                   class="form-control"
+                   accept="image/jpeg,image/png,image/webp"
+                   onchange="previewLocalPhoto(this)" />
+            <div class="form-text">
+              {{ 'JPG o PNG. Máximo 2 MB.' if lang == 'es' else 'JPG or PNG. Max 2 MB.' }}
+            </div>
+          </div>
+
+          <!-- Botón guardar -->
+          <div class="d-grid">
+            <button type="submit" class="btn btn-pal btn-lg fw-bold">
+              {{ t.pedit_save if t is defined else 'Guardar cambios' }}
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Vista previa del perfil ────────────────────────────────────────────── -->
+  <div class="col-12 col-lg-5">
+    <div class="card border-0 shadow-sm" style="border-radius:14px; overflow:hidden;">
+
+      <!-- Cabecera naranja (simulando hero del perfil público) -->
+      <div style="background:linear-gradient(135deg,#fff7ed 0%,#ffedd5 100%);
+                  border-bottom:1px solid #fed7aa; padding:24px;">
+        <div class="d-flex align-items-center gap-3">
+
+          <!-- Avatar con previsualización en tiempo real -->
+          <div id="preview-avatar-img" style="display:none;">
+            <img id="preview-img" src="{{ prof.avatar_url or '' }}"
+                 alt="avatar"
+                 style="width:72px;height:72px;border-radius:50%;object-fit:cover;
+                        border:3px solid #fff;box-shadow:0 4px 12px rgba(249,115,22,.3);" />
+          </div>
+          <div id="preview-avatar-init"
+               style="width:72px;height:72px;border-radius:50%;
+                      background:var(--pal-orange);border:3px solid #fff;
+                      box-shadow:0 4px 12px rgba(249,115,22,.3);
+                      display:flex;align-items:center;justify-content:center;
+                      font-size:28px;font-weight:900;color:#fff;flex-shrink:0;">
+            {{ prof.name[0] }}
+          </div>
+
+          <div>
+            <div class="fw-black" style="font-size:1.1rem;color:#1a1a1a;" id="preview-name">
+              {{ prof.name }}
+            </div>
+            <div class="fw-semibold" style="color:#9a3412;font-size:.88rem;" id="preview-specialty">
+              {{ prof.specialty or '' }}
+            </div>
+            {% if prof.country %}
+            <div class="text-muted small mt-1">
+              {% set flag = get_country_flag(prof.country) %}
+              {{ flag }} {{ prof.country }}{% if prof.city %} · {{ prof.city }}{% endif %}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Biografía en preview -->
+        <div id="preview-bio"
+             class="mt-3 text-muted"
+             style="font-size:.85rem;line-height:1.5;
+                    {% if not prof.bio %}display:none;{% endif %}">
+          {{ prof.bio or '' }}
+        </div>
+      </div>
+
+      <!-- Pie de la card de preview -->
+      <div class="card-body px-4 py-3">
+        <div class="text-muted small fw-semibold text-uppercase"
+             style="letter-spacing:.4px; font-size:.7rem;">
+          {{ t.pedit_avatar_preview if t is defined else 'Vista previa' }}
+        </div>
+        <div class="text-muted small mt-1">
+          {{ 'Así se ve tu perfil en el directorio público.' if lang == 'es'
+             else 'This is how your profile looks in the public directory.' }}
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Consejo sobre foto -->
+    <div class="card border-0 mt-3 p-3"
+         style="background:#f0fdf4;border:1.5px solid #bbf7d0 !important;border-radius:12px;">
+      <div class="small" style="color:#166534;">
+        💡 <strong>{{ 'Consejo:' if lang == 'es' else 'Tip:' }}</strong>
+        {{ 'Para subir una foto, podés usar servicios gratuitos como Imgur (imgur.com) — subís tu foto y copiás el enlace directo aquí.' if lang == 'es'
+           else 'To upload a photo, you can use free services like Imgur (imgur.com) — upload your photo and paste the direct link here.' }}
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── Vista previa en tiempo real ──────────────────────────────────────────────
+
+function updatePreview() {
+  const bio  = document.querySelector('[name="bio"]').value.trim();
+  const bioEl = document.getElementById('preview-bio');
+  if (bio) {
+    bioEl.textContent = bio;
+    bioEl.style.display = '';
+  } else {
+    bioEl.style.display = 'none';
+  }
+}
+
+function updateAvatarPreview(url) {
+  const imgWrapper  = document.getElementById('preview-avatar-img');
+  const initWrapper = document.getElementById('preview-avatar-init');
+  const img         = document.getElementById('preview-img');
+
+  if (url && url.trim()) {
+    img.src = url.trim();
+    img.onerror = () => {
+      // Si la URL no carga, vuelve a las iniciales
+      imgWrapper.style.display  = 'none';
+      initWrapper.style.display = 'flex';
+    };
+    img.onload = () => {
+      imgWrapper.style.display  = '';
+      initWrapper.style.display = 'none';
+    };
+  } else {
+    imgWrapper.style.display  = 'none';
+    initWrapper.style.display = 'flex';
+  }
+}
+
+function previewLocalPhoto(input) {
+  const imgWrapper  = document.getElementById('preview-avatar-img');
+  const initWrapper = document.getElementById('preview-avatar-init');
+  const img         = document.getElementById('preview-img');
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      img.src = e.target.result;
+      imgWrapper.style.display  = '';
+      initWrapper.style.display = 'none';
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+// Inicializar vista previa al cargar si ya hay foto guardada
+document.addEventListener('DOMContentLoaded', () => {
+  const currentAvatar = "{{ prof.avatar_url or '' }}";
+  if (currentAvatar) updateAvatarPreview(currentAvatar);
+});
+</script>
+{% endblock %}

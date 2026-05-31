@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="{{ lang | default('es') }}">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% if survey %}{{ survey.title }}{% else %}Encuesta{% endif %} — PressAndLive</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+  <style>
+    body { background: #f8f9fa; }
+
+    /* ── Estrellas interactivas ── */
+    .star-rating {
+      display: inline-flex;
+      flex-direction: row-reverse;
+      gap: 6px;
+    }
+    .star-rating input[type="radio"] { display: none; }
+    .star-rating label {
+      font-size: 2.8rem;
+      color: #d1d5db;
+      cursor: pointer;
+      transition: color .12s, transform .1s;
+      line-height: 1;
+      user-select: none;
+    }
+    .star-rating label:hover { transform: scale(1.15); }
+    .star-rating input:checked ~ label,
+    .star-rating label:hover,
+    .star-rating label:hover ~ label { color: #f59e0b; }
+
+    /* ── Sí / No botones ── */
+    .yn-btn {
+      border: 2px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 12px 28px;
+      font-weight: 700;
+      font-size: .95rem;
+      cursor: pointer;
+      background: #fff;
+      color: #374151;
+      transition: all .15s;
+    }
+    .yn-btn:hover { border-color: #f97316; color: #f97316; }
+    .yn-btn.selected-yes { background: #f0fdf4; border-color: #16a34a; color: #16a34a; }
+    .yn-btn.selected-no  { background: #f9fafb; border-color: #9ca3af; color: #6b7280; }
+
+    .survey-card {
+      max-width: 560px;
+      margin: 0 auto;
+      border-radius: 18px;
+    }
+    .explore-nav {
+      background: #fff;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 12px 0;
+    }
+    .explore-footer {
+      text-align: center;
+      font-size: .8rem;
+      color: #9ca3af;
+      padding: 32px 0;
+    }
+    .explore-footer a { color: var(--pal-orange); text-decoration: none; font-weight: 700; }
+  </style>
+</head>
+<body>
+
+<!-- ── Navbar mínimo ──────────────────────────────────────────────────────── -->
+<nav class="explore-nav">
+  <div class="container d-flex align-items-center justify-content-between">
+    <a href="/" class="d-flex align-items-center gap-2 text-decoration-none">
+      <div style="position:relative;width:32px;height:32px;display:inline-block;">
+        <div style="position:absolute;bottom:0;left:0;width:32px;height:29px;background:#c05000;border-radius:7px;"></div>
+        <div style="position:absolute;top:0;left:0;width:32px;height:27px;background:#f97316;border-radius:7px;display:flex;align-items:center;justify-content:center;">
+          <div style="width:8px;height:8px;background:#fff;border-radius:50%;opacity:.9;"></div>
+        </div>
+      </div>
+      <span class="brand-text" style="font-size:1.1rem;">Press<span>&amp; Live</span></span>
+    </a>
+    <div class="d-flex gap-1">
+      <form method="post" action="/set-lang/es" class="m-0">
+        <button type="submit" class="btn btn-sm {% if lang == 'es' %}btn-pal{% else %}btn-outline-secondary{% endif %} px-2 py-1" style="font-size:.75rem;">🇪🇸 ES</button>
+      </form>
+      <form method="post" action="/set-lang/en" class="m-0">
+        <button type="submit" class="btn btn-sm {% if lang == 'en' %}btn-pal{% else %}btn-outline-secondary{% endif %} px-2 py-1" style="font-size:.75rem;">🇬🇧 EN</button>
+      </form>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Contenido ──────────────────────────────────────────────────────────── -->
+<div class="container py-5">
+  <div class="survey-card">
+
+    {% if error %}
+    <!-- ── Error: enlace inválido ────────────────────────────────────────── -->
+    <div class="card border-0 shadow-sm text-center p-5" style="border-radius:18px;">
+      <div style="font-size:3rem; margin-bottom:16px;">🔗</div>
+      <h2 class="fw-bold fs-4 mb-2">
+        {{ 'Enlace inválido' if lang == 'es' else 'Invalid link' }}
+      </h2>
+      <p class="text-muted">{{ t.enc_invalid_token }}</p>
+    </div>
+
+    {% elif already_answered %}
+    <!-- ── Ya respondida ──────────────────────────────────────────────────── -->
+    <div class="card border-0 shadow-sm text-center p-5" style="border-radius:18px;">
+      <div style="font-size:3rem; margin-bottom:16px;">✅</div>
+      <h2 class="fw-bold fs-4 mb-2">{{ t.enc_already_answered }}</h2>
+      {% if prof %}
+      <p class="text-muted">
+        {% if lang == 'es' %}
+        Tu opinión sobre <strong>{{ prof.name }}</strong> ya fue registrada. ¡Gracias!
+        {% else %}
+        Your feedback about <strong>{{ prof.name }}</strong> has already been recorded. Thank you!
+        {% endif %}
+      </p>
+      {% endif %}
+    </div>
+
+    {% elif submitted %}
+    <!-- ── Gracias ────────────────────────────────────────────────────────── -->
+    <div class="card border-0 shadow-sm text-center p-5" style="border-radius:18px;"
+         style="background:linear-gradient(135deg,#fff7ed,#fff);">
+      <div style="font-size:3.5rem; margin-bottom:16px;">⭐</div>
+      <h2 class="fw-black fs-3 mb-2" style="color:#9a3412;">{{ t.enc_thanks_title }}</h2>
+      <p class="text-muted mb-4">{{ t.enc_thanks_sub }}</p>
+      {% if prof %}
+      <div class="p-3 rounded-3 mb-3" style="background:#fff7ed;">
+        <div class="fw-semibold" style="color:#9a3412;">{{ prof.name }}</div>
+        {% if prof.specialty %}
+        <div class="text-muted small">{{ prof.specialty }}</div>
+        {% endif %}
+      </div>
+      {% if prof.slug %}
+      <a href="/agenda/{{ prof.slug }}" class="btn btn-pal fw-bold px-4">
+        📅 {% if lang == 'es' %}Reservar otra cita{% else %}Book again{% endif %}
+      </a>
+      {% endif %}
+      {% endif %}
+    </div>
+
+    {% else %}
+    <!-- ── Formulario de encuesta ─────────────────────────────────────────── -->
+
+    <!-- Encabezado con prof -->
+    {% if prof %}
+    <div class="text-center mb-4">
+      <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
+           style="width:72px;height:72px;background:#fff7ed;border:3px solid #fed7aa;font-size:2rem;font-weight:900;color:#9a3412;">
+        {% if prof.avatar_url %}
+        <img src="{{ prof.avatar_url }}" alt="{{ prof.name }}"
+             style="width:100%;height:100%;object-fit:cover;border-radius:50%;"
+             onerror="this.outerHTML='<span>{{ prof.name[0] }}</span>'" />
+        {% else %}
+        {{ prof.name[0] }}
+        {% endif %}
+      </div>
+      <h2 class="fw-black fs-4 mb-1">{{ survey.title }}</h2>
+      <div class="text-muted small">
+        {% if lang == 'es' %}
+        Tu opinión sobre <strong>{{ prof.name }}</strong> nos ayuda a mejorar
+        {% else %}
+        Your feedback about <strong>{{ prof.name }}</strong> helps us improve
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="card border-0 shadow-sm" style="border-radius:18px;">
+      <div class="card-body p-4 p-md-5">
+
+        <form method="post" action="/encuesta/{{ token }}" id="survey-form">
+          <input type="hidden" name="csrf" value="{{ csrf_token(request) }}" />
+
+          <!-- 1) Estrellas -->
+          <div class="mb-5">
+            <label class="form-label fw-bold mb-3 d-block" style="color:#374151;">
+              {{ t.enc_form_rating }}
+            </label>
+            <div class="star-rating" id="star-container">
+              {% for val in [5, 4, 3, 2, 1] %}
+              <input type="radio" name="rating" id="star{{ val }}" value="{{ val }}" required />
+              <label for="star{{ val }}" title="{{ val }}/5">★</label>
+              {% endfor %}
+            </div>
+            <div id="star-label" class="text-muted small mt-2" style="min-height:1.2em;"></div>
+          </div>
+
+          <!-- 2) ¿Recomendarías? -->
+          <div class="mb-5">
+            <label class="form-label fw-bold mb-3 d-block" style="color:#374151;">
+              {{ t.enc_form_recommend }}
+            </label>
+            <input type="hidden" name="would_recommend" id="recommend-value" required />
+            <div class="d-flex gap-3 flex-wrap">
+              <button type="button" class="yn-btn" id="btn-yes"
+                      onclick="selectRecommend('yes')">
+                👍 {{ t.enc_form_recommend_yes }}
+              </button>
+              <button type="button" class="yn-btn" id="btn-no"
+                      onclick="selectRecommend('no')">
+                {{ t.enc_form_recommend_no }}
+              </button>
+            </div>
+          </div>
+
+          <!-- 3) Comentarios -->
+          <div class="mb-5">
+            <label class="form-label fw-bold mb-2 d-block" style="color:#374151;">
+              {{ t.enc_form_comments }}
+            </label>
+            <textarea name="comments" class="form-control" rows="4"
+                      style="border-radius:10px; resize:vertical;"
+                      placeholder="{% if lang == 'es' %}Contanos tu experiencia con más detalle…{% else %}Tell us more about your experience…{% endif %}"></textarea>
+          </div>
+
+          <!-- Botón enviar -->
+          <div class="d-grid">
+            <button type="submit" class="btn btn-pal btn-lg fw-bold py-3"
+                    style="border-radius:12px; font-size:1.05rem;" id="submit-btn">
+              ⭐ {{ t.enc_form_submit }}
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+
+    {% endif %}
+  </div>
+</div>
+
+<!-- ── Footer ─────────────────────────────────────────────────────────────── -->
+<div class="explore-footer">
+  <p>{{ '¿Sos profesional?' if lang == 'es' else 'Are you a professional?' }}
+     <a href="/register">{{ 'Registrate gratis en PressAndLive' if lang == 'es' else 'Sign up free on PressAndLive' }}</a>
+  </p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ── Etiquetas de estrellas ──
+const STAR_LABELS = {
+  {% if lang == 'es' %}
+  1: 'Muy mala experiencia 😕',
+  2: 'Podría mejorar',
+  3: 'Bien, pero con detalles',
+  4: 'Muy buena experiencia 😊',
+  5: '¡Excelente! Totalmente satisfecho/a ⭐',
+  {% else %}
+  1: 'Very poor experience 😕',
+  2: 'Could be better',
+  3: 'Good, but with some issues',
+  4: 'Very good experience 😊',
+  5: 'Excellent! Completely satisfied ⭐',
+  {% endif %}
+};
+
+document.querySelectorAll('.star-rating input[type="radio"]').forEach(input => {
+  input.addEventListener('change', () => {
+    document.getElementById('star-label').textContent = STAR_LABELS[input.value] || '';
+  });
+});
+
+// ── Sí / No ──
+function selectRecommend(value) {
+  document.getElementById('recommend-value').value = value;
+  const btnYes = document.getElementById('btn-yes');
+  const btnNo  = document.getElementById('btn-no');
+  btnYes.className = 'yn-btn' + (value === 'yes' ? ' selected-yes' : '');
+  btnNo.className  = 'yn-btn' + (value === 'no'  ? ' selected-no'  : '');
+}
+
+// ── Validación antes de enviar ──
+document.getElementById('survey-form')?.addEventListener('submit', function(e) {
+  const rating  = document.querySelector('input[name="rating"]:checked');
+  const recommend = document.getElementById('recommend-value').value;
+  if (!rating) {
+    e.preventDefault();
+    alert('{% if lang == "es" %}Por favor, seleccioná una calificación de estrellas.{% else %}Please select a star rating.{% endif %}');
+    return;
+  }
+  if (!recommend) {
+    e.preventDefault();
+    alert('{% if lang == "es" %}Por favor, indicá si recomendarías este profesional.{% else %}Please indicate if you would recommend this professional.{% endif %}');
+    return;
+  }
+  document.getElementById('submit-btn').disabled = true;
+  document.getElementById('submit-btn').textContent = '{% if lang == "es" %}Enviando…{% else %}Sending…{% endif %}';
+});
+</script>
+
+</body>
+</html>

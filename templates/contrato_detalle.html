@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}{{ contract.title }} — PressAndLive{% endblock %}
+
+{% block content %}
+
+<!-- Cabecera -->
+<div class="mb-4">
+  <a href="/contratos" class="btn btn-sm btn-outline-secondary fw-semibold mb-2">
+    ← {{ 'Volver a contratos' if lang == 'es' else 'Back to contracts' }}
+  </a>
+  <div class="d-flex align-items-center gap-3 flex-wrap">
+    <h1 class="fw-black fs-3 mb-0">📝 {{ contract.title }}</h1>
+    <!-- Badge de estado -->
+    {% if contract.status == 'draft' %}
+      <span class="badge rounded-pill"
+            style="background:#f3f4f6;color:#374151;font-weight:600;font-size:.8rem;padding:6px 14px;">
+        {{ t.ct_status_draft if t is defined else 'Borrador' }}
+      </span>
+    {% elif contract.status == 'sent' %}
+      <span class="badge rounded-pill"
+            style="background:#eff6ff;color:#1d4ed8;font-weight:600;font-size:.8rem;padding:6px 14px;">
+        {{ t.ct_status_sent if t is defined else 'Enviado' }}
+      </span>
+    {% elif contract.status == 'signed' %}
+      <span class="badge rounded-pill"
+            style="background:#f0fdf4;color:#15803d;font-weight:600;font-size:.8rem;padding:6px 14px;">
+        {{ t.ct_status_signed if t is defined else 'Firmado ✅' }}
+      </span>
+    {% elif contract.status == 'expired' %}
+      <span class="badge rounded-pill"
+            style="background:#fef2f2;color:#dc2626;font-weight:600;font-size:.8rem;padding:6px 14px;">
+        {{ t.ct_status_expired if t is defined else 'Expirado' }}
+      </span>
+    {% endif %}
+  </div>
+</div>
+
+<div class="row g-4">
+
+  <!-- ── Contenido del contrato ─────────────────────────────────────────────── -->
+  <div class="col-12 col-lg-8">
+    <div class="card border-0 shadow-sm mb-4" style="border-radius:14px;">
+      <div class="card-body p-4">
+        <h2 class="fw-bold fs-6 mb-3" style="color:#374151;">
+          {{ 'Contenido del contrato' if lang == 'es' else 'Contract content' }}
+        </h2>
+        <div style="background:#f8f9fa;border-radius:10px;padding:24px;
+                    font-size:.92rem;line-height:1.8;white-space:pre-wrap;color:#1a1a1a;">
+          {{ contract.content }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Firma (si está firmado) -->
+    {% if contract.status == 'signed' and contract.signature_data %}
+    <div class="card border-0 shadow-sm" style="border-radius:14px; background:#f0fdf4; border:1.5px solid #bbf7d0 !important;">
+      <div class="card-body p-4">
+        <h2 class="fw-bold fs-6 mb-3" style="color:#15803d;">
+          ✅ {{ 'Firma digital del cliente' if lang == 'es' else 'Client digital signature' }}
+        </h2>
+        <div style="font-size:1.4rem;font-weight:900;font-style:italic;color:#1a1a1a;
+                    border-bottom:2px solid #15803d;padding-bottom:6px;display:inline-block;">
+          {{ contract.signature_data }}
+        </div>
+        {% if contract.signed_at %}
+        <div class="text-muted small mt-2">
+          {{ 'Firmado el' if lang == 'es' else 'Signed on' }}
+          {{ contract.signed_at.strftime('%d/%m/%Y a las %H:%M' if lang == 'es' else '%m/%d/%Y at %H:%M') }}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ── Panel de datos ─────────────────────────────────────────────────────── -->
+  <div class="col-12 col-lg-4">
+    <div class="card border-0 shadow-sm" style="border-radius:14px;">
+      <div class="card-body p-4">
+
+        <h3 class="fs-6 fw-bold mb-3">
+          {{ 'Detalles' if lang == 'es' else 'Details' }}
+        </h3>
+
+        <dl class="d-flex flex-column gap-3 mb-0" style="font-size:.88rem;">
+          <div>
+            <dt class="text-muted fw-normal small text-uppercase" style="letter-spacing:.4px;">
+              {{ 'Cliente' if lang == 'es' else 'Client' }}
+            </dt>
+            <dd class="fw-semibold mb-0">{{ contract.client_name }}</dd>
+            <dd class="text-muted small mb-0">{{ contract.client_email }}</dd>
+          </div>
+          <div>
+            <dt class="text-muted fw-normal small text-uppercase" style="letter-spacing:.4px;">
+              {{ 'Creado' if lang == 'es' else 'Created' }}
+            </dt>
+            <dd class="fw-semibold mb-0">{{ contract.created_at.strftime('%d/%m/%Y') }}</dd>
+          </div>
+          {% if contract.sent_at %}
+          <div>
+            <dt class="text-muted fw-normal small text-uppercase" style="letter-spacing:.4px;">
+              {{ 'Enviado' if lang == 'es' else 'Sent' }}
+            </dt>
+            <dd class="fw-semibold mb-0">{{ contract.sent_at.strftime('%d/%m/%Y') }}</dd>
+          </div>
+          {% endif %}
+          {% if contract.expires_at %}
+          <div>
+            <dt class="text-muted fw-normal small text-uppercase" style="letter-spacing:.4px;">
+              {{ 'Vence' if lang == 'es' else 'Expires' }}
+            </dt>
+            <dd class="fw-semibold mb-0">{{ contract.expires_at.strftime('%d/%m/%Y') }}</dd>
+          </div>
+          {% endif %}
+        </dl>
+
+        {% if contract.status == 'draft' %}
+        <hr class="my-3"/>
+        <form method="post" action="/contratos/{{ contract.id }}/enviar"
+              onsubmit="return confirm('{{ t.ct_send_confirm }}')">
+          <div class="d-grid">
+            <button type="submit" class="btn btn-pal fw-bold">
+              📤 {{ t.ct_btn_send if t is defined else 'Enviar al cliente' }}
+            </button>
+          </div>
+        </form>
+        {% endif %}
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

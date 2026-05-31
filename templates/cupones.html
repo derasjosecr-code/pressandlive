@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}{{ t.cup_title }} — PressAndLive{% endblock %}
+
+{% block content %}
+
+<!-- Cabecera -->
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
+  <div>
+    <a href="/modulos/marketing-automation" class="btn btn-sm btn-outline-secondary fw-semibold mb-2">
+      {{ t.cup_back }}
+    </a>
+    <h1 class="fw-black fs-3 mb-1">🎟️ {{ t.cup_title }}</h1>
+    <p class="text-muted small mb-0">{{ t.cup_subtitle }}</p>
+  </div>
+  <a href="/cupones/nuevo" class="btn btn-pal fw-bold px-4">
+    {{ t.cup_new_btn }}
+  </a>
+</div>
+
+{% if request.query_params.get('saved') %}
+<div class="alert alert-success alert-dismissible fade show py-2 small mb-3" role="alert">
+  ✅ {{ t.cup_saved }}
+  <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+{% if coupons %}
+<div class="card border-0 shadow-sm" style="border-radius:14px; overflow:hidden;">
+  <table class="table table-hover mb-0" id="cup-table">
+    <thead style="background:#fff7ed;">
+      <tr>
+        <th class="px-4 py-3 fw-bold" style="font-size:.82rem; color:#9a3412; border:none;">
+          {{ t.cup_col_code }}
+        </th>
+        <th class="px-4 py-3 fw-bold" style="font-size:.82rem; color:#9a3412; border:none;">
+          {{ t.cup_col_discount }}
+        </th>
+        <th class="px-4 py-3 fw-bold" style="font-size:.82rem; color:#9a3412; border:none;">
+          {{ t.cup_col_uses }}
+        </th>
+        <th class="px-4 py-3 fw-bold" style="font-size:.82rem; color:#9a3412; border:none;">
+          {{ t.cup_col_valid }}
+        </th>
+        <th class="px-4 py-3 fw-bold" style="font-size:.82rem; color:#9a3412; border:none;">
+          {{ t.cup_col_status }}
+        </th>
+        <th class="px-4 py-3 fw-bold" style="font-size:.82rem; color:#9a3412; border:none;">
+          {{ t.cup_col_actions }}
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in coupons %}
+      <tr>
+        <!-- Código -->
+        <td class="px-4 py-3 align-middle">
+          <span class="fw-black" style="font-size:1rem; font-family:monospace; letter-spacing:.5px;
+                color:#9a3412; background:#fff7ed; padding:4px 10px; border-radius:6px;">
+            {{ c.code }}
+          </span>
+          {% if c.description %}
+          <div class="text-muted small mt-1">{{ c.description }}</div>
+          {% endif %}
+        </td>
+
+        <!-- Descuento -->
+        <td class="px-4 py-3 align-middle fw-bold" style="font-size:.92rem;">
+          {% if c.discount_type == 'percent' %}
+            {{ c.discount_value | int }}%
+          {% else %}
+            {{ c.discount_value }}
+          {% endif %}
+        </td>
+
+        <!-- Usos -->
+        <td class="px-4 py-3 align-middle text-muted small">
+          {{ c.uses_count }}
+          {% if c.max_uses is not none %}
+            / {{ c.max_uses }}
+          {% else %}
+            / {{ t.cup_unlimited }}
+          {% endif %}
+        </td>
+
+        <!-- Vigencia -->
+        <td class="px-4 py-3 align-middle text-muted small">
+          {% if c.valid_from %}
+          <div>{{ t.cup_valid_from }} {{ c.valid_from.strftime('%d/%m/%Y') }}</div>
+          {% endif %}
+          {% if c.valid_until %}
+          <div>{{ t.cup_valid_until }} {{ c.valid_until.strftime('%d/%m/%Y') }}</div>
+          {% endif %}
+          {% if not c.valid_from and not c.valid_until %}
+          <span class="text-muted">—</span>
+          {% endif %}
+        </td>
+
+        <!-- Estado -->
+        <td class="px-4 py-3 align-middle">
+          {% if c.is_active %}
+          <span class="badge rounded-pill"
+                style="background:#f0fdf4;color:#15803d;font-weight:600;font-size:.75rem;padding:5px 12px;">
+            ✅ {{ t.cup_active }}
+          </span>
+          {% else %}
+          <span class="badge rounded-pill"
+                style="background:#f3f4f6;color:#374151;font-weight:600;font-size:.75rem;padding:5px 12px;">
+            {{ t.cup_inactive }}
+          </span>
+          {% endif %}
+        </td>
+
+        <!-- Acciones -->
+        <td class="px-4 py-3 align-middle">
+          <div class="d-flex gap-2">
+            <a href="/cupones/{{ c.id }}/editar"
+               class="btn btn-sm btn-outline-secondary fw-semibold" style="font-size:.78rem;">
+              ✏️ {{ t.cup_btn_edit }}
+            </a>
+            <form method="post" action="/cupones/{{ c.id }}/eliminar" class="m-0"
+                  onsubmit="return confirm('{{ t.cup_delete_confirm }}')">
+              <button type="submit"
+                      class="btn btn-sm btn-outline-danger fw-semibold" style="font-size:.78rem;">
+                🗑 {{ t.cup_btn_delete }}
+              </button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% else %}
+<div class="card border-0 bg-white shadow-sm text-center p-5 text-muted" style="border-radius:14px;">
+  <div class="fs-2 mb-2">🎟️</div>
+  <div class="mb-3">{{ t.cup_empty }}</div>
+  <a href="/cupones/nuevo" class="btn btn-pal fw-semibold px-4"
+     style="display:inline-block; width:fit-content; margin:auto;">
+    {{ t.cup_new_btn }}
+  </a>
+</div>
+{% endif %}
+
+{% endblock %}

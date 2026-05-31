@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block title %}{{ t.social_accounts_title }} — PressAndLive{% endblock %}
+
+{% block content %}
+
+<!-- Volver -->
+<div class="mb-4 d-flex align-items-center gap-3 flex-wrap">
+  <a href="/modulo/marketing-automation" class="btn btn-sm btn-outline-secondary fw-semibold">
+    ← {{ 'Marketing Automation' }}
+  </a>
+  <a href="/social/posts" class="btn btn-sm btn-pal fw-semibold">
+    📋 {{ t.social_posts_link }}
+  </a>
+</div>
+
+<!-- Encabezado -->
+<div class="card border-0 shadow-sm mb-4"
+     style="background:#fff7ed; border:1.5px solid #fed7aa !important; border-radius:14px;">
+  <div class="card-body p-4 d-flex align-items-center gap-3 flex-wrap">
+    <div class="fs-1 lh-1">📱</div>
+    <div>
+      <h1 class="fw-black fs-4 mb-1" style="color:#9a3412;">{{ t.social_accounts_title }}</h1>
+      <p class="text-muted small mb-0">{{ t.social_accounts_sub }}</p>
+    </div>
+  </div>
+</div>
+
+<!-- Banner modo desarrollo -->
+{% if is_dev %}
+<div class="alert alert-warning d-flex align-items-center gap-2 mb-4"
+     style="border-radius:10px; font-size:.875rem;">
+  <span class="fs-5">🧪</span>
+  <div>{{ t.social_dev_note }}</div>
+</div>
+{% endif %}
+
+<!-- Alertas de acción -->
+{% if request.query_params.get('ok') %}
+<div class="alert alert-success d-flex align-items-center gap-2 mb-3"
+     style="border-radius:10px; font-size:.875rem;">
+  <span>✅</span>
+  <span>
+    {% if request.query_params.get('ok') == 'desconectado' %}
+      {{ 'Cuenta desconectada.' if lang == 'es' else 'Account disconnected.' }}
+    {% else %}
+      {{ 'Cuenta conectada correctamente.' if lang == 'es' else 'Account connected successfully.' }}
+    {% endif %}
+  </span>
+</div>
+{% endif %}
+
+<div class="row g-4">
+
+  <!-- Columna izquierda: cuentas conectadas -->
+  <div class="col-lg-7">
+    <h2 class="fs-5 fw-bold mb-3">
+      {{ 'Cuentas conectadas' if lang == 'es' else 'Connected accounts' }}
+      {% if accounts %}
+      <span class="badge rounded-pill ms-1"
+            style="background:#f97316; color:#fff; font-size:.7rem;">{{ accounts|length }}</span>
+      {% endif %}
+    </h2>
+
+    {% if accounts %}
+    <div class="d-flex flex-column gap-3">
+      {% for acc in accounts %}
+      {% set pl = platforms.get(acc.platform, {}) %}
+      <div class="card border-0 shadow-sm" style="border-radius:12px;">
+        <div class="card-body p-3 d-flex align-items-center gap-3">
+
+          <!-- Icono plataforma -->
+          <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+               style="width:48px;height:48px;background:{{ pl.color if pl else '#e5e7eb' }}20;
+                      font-size:1.5rem;">
+            {{ pl.icon if pl else '🌐' }}
+          </div>
+
+          <!-- Info -->
+          <div class="flex-grow-1">
+            <div class="fw-bold" style="font-size:.95rem;">
+              {{ pl.label if pl else acc.platform }}
+            </div>
+            <div class="text-muted small">@{{ acc.username }}</div>
+            <div class="text-muted" style="font-size:.75rem;">
+              {{ t.social_connected_label }}:
+              {{ acc.connected_at.strftime('%d/%m/%Y') if acc.connected_at else '—' }}
+            </div>
+          </div>
+
+          <!-- Acciones -->
+          <div class="d-flex flex-column gap-2 align-items-end flex-shrink-0">
+            <a href="/social/posts?platform={{ acc.platform }}"
+               class="btn btn-sm btn-outline-secondary" style="font-size:.78rem;">
+              📋 {{ t.social_posts_link }}
+            </a>
+            <form method="post" action="/social/accounts/{{ acc.id }}/desconectar" class="m-0">
+              <button type="submit" class="btn btn-sm btn-outline-danger"
+                      style="font-size:.78rem;"
+                      onclick="return confirm('{{ '¿Desconectar esta cuenta?' if lang == 'es' else 'Disconnect this account?' }}')">
+                🔌 {{ t.social_disconnect_btn }}
+              </button>
+            </form>
+          </div>
+
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% else %}
+    <!-- Estado vacío -->
+    <div class="card border-0 bg-white shadow-sm text-center p-5" style="border-radius:12px;">
+      <div class="fs-2 mb-3">📱</div>
+      <div class="fw-bold mb-1">{{ t.social_no_accounts }}</div>
+      <div class="text-muted small">{{ t.social_no_accounts_sub }}</div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Columna derecha: conectar nueva cuenta -->
+  <div class="col-lg-5">
+    <h2 class="fs-5 fw-bold mb-3">{{ t.social_connect_title }}</h2>
+    <div class="card border-0 shadow-sm p-4" style="border-radius:12px;">
+
+      <form method="post" action="/social/accounts/conectar">
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold small">{{ t.social_platform_label }} *</label>
+          <div class="d-flex flex-column gap-2">
+            {% for key, pl in platforms.items() %}
+            <label class="d-flex align-items-center gap-2 p-2 rounded-2 border"
+                   style="cursor:pointer; transition:all .15s;"
+                   onmouseover="this.style.borderColor='#f97316'"
+                   onmouseout="this.style.borderColor=''">
+              <input type="radio" name="platform" value="{{ key }}" required
+                     style="accent-color:#f97316;" />
+              <span style="font-size:1.2rem;">{{ pl.icon }}</span>
+              <span class="fw-semibold" style="font-size:.9rem;">{{ pl.label }}</span>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label fw-semibold small">{{ t.social_username_label }} *</label>
+          <input type="text" name="username" class="form-control"
+                 placeholder="{{ 'Ej: mi_pagina_de_negocio' if lang == 'es' else 'e.g. my_business_page' }}"
+                 required style="border-radius:8px;" />
+          {% if is_dev %}
+          <div class="form-text text-warning">
+            🧪 {{ 'En modo dev, podés escribir cualquier nombre.' if lang == 'es' else 'In dev mode, any name is accepted.' }}
+          </div>
+          {% endif %}
+        </div>
+
+        <div class="d-grid">
+          <button type="submit" class="btn btn-pal fw-bold">
+            🔗 {{ t.social_connect_btn }}
+          </button>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- Nota de producción -->
+    {% if not is_dev %}
+    <div class="mt-3 p-3 rounded-3"
+         style="background:#f0f9ff; border:1px solid #bae6fd; font-size:.82rem; color:#0369a1;">
+      <strong>{{ '¿Cómo conectar en producción?' if lang == 'es' else 'How to connect in production?' }}</strong><br>
+      {{ 'Necesitás configurar las credenciales OAuth de Meta (Facebook/Instagram), LinkedIn o X en el archivo .env.' if lang == 'es' else 'You need to configure OAuth credentials for Meta (Facebook/Instagram), LinkedIn or X in the .env file.' }}
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+{% endblock %}

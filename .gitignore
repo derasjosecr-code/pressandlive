@@ -1,0 +1,15 @@
+# Variables de entorno — NUNCA subir a GitHub
+.env
+
+# Base de datos local
+*.db
+*.db-journal
+
+# Archivos de Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Fotos subidas por usuarios
+static/avatars/*
+!static/avatars/.gitkeep

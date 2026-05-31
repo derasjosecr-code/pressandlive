@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block title %}{{ t.ct_new_title if t is defined else 'Nuevo contrato' }} — PressAndLive{% endblock %}
+
+{% block content %}
+
+<!-- Cabecera -->
+<div class="mb-4">
+  <a href="/contratos" class="btn btn-sm btn-outline-secondary fw-semibold mb-2">
+    ← {{ 'Volver a contratos' if lang == 'es' else 'Back to contracts' }}
+  </a>
+  <h1 class="fw-black fs-3 mb-1">
+    📝 {{ t.ct_new_title if t is defined else 'Nuevo contrato' }}
+  </h1>
+  <p class="text-muted small mb-0">
+    {{ t.ct_new_subtitle if t is defined else 'Completá los datos del contrato y elegí enviarlo ahora o guardarlo como borrador' }}
+  </p>
+</div>
+
+<div class="row g-4">
+
+  <!-- ── Formulario ──────────────────────────────────────────────────────────── -->
+  <div class="col-12 col-lg-8">
+    <div class="card border-0 shadow-sm" style="border-radius:14px;">
+      <div class="card-body p-4">
+
+        <form method="post" action="/contratos/nuevo" id="ct-form">
+
+          <!-- Datos del cliente -->
+          <h2 class="fs-6 fw-bold mb-3 pb-2" style="border-bottom:1px solid #e5e7eb; color:#9a3412;">
+            {{ 'Datos del cliente' if lang == 'es' else 'Client details' }}
+          </h2>
+
+          <div class="row g-3 mb-4">
+            <div class="col-12 col-sm-6">
+              <label class="form-label fw-semibold small">
+                {{ t.ct_field_client_name if t is defined else 'Nombre del cliente *' }}
+              </label>
+              <input type="text" name="client_name" class="form-control"
+                     placeholder="{{ 'Ej: María García' if lang == 'es' else 'e.g. Maria García' }}"
+                     required />
+            </div>
+            <div class="col-12 col-sm-6">
+              <label class="form-label fw-semibold small">
+                {{ t.ct_field_client_email if t is defined else 'Email del cliente *' }}
+              </label>
+              <input type="email" name="client_email" class="form-control"
+                     placeholder="cliente@correo.com" required />
+            </div>
+          </div>
+
+          <!-- Detalles del contrato -->
+          <h2 class="fs-6 fw-bold mb-3 pb-2" style="border-bottom:1px solid #e5e7eb; color:#9a3412;">
+            {{ 'Detalles del contrato' if lang == 'es' else 'Contract details' }}
+          </h2>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">
+              {{ t.ct_field_title if t is defined else 'Título del contrato *' }}
+            </label>
+            <input type="text" name="title" class="form-control"
+                   placeholder="{{ 'Ej: Contrato de prestación de servicios — Sesiones de coaching' if lang == 'es' else 'e.g. Service agreement — Coaching sessions' }}"
+                   required />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">
+              {{ t.ct_field_content if t is defined else 'Contenido del contrato *' }}
+            </label>
+            <textarea name="content" class="form-control" rows="14"
+                      placeholder="{{ t.ct_field_content_hint if t is defined else 'Escribí el texto completo del contrato aquí…' }}"
+                      style="font-family: monospace; font-size:.88rem;"
+                      required></textarea>
+            <div class="form-text">
+              {{ t.ct_field_content_hint if t is defined else 'Podés escribir el texto en formato libre. El cliente lo verá tal como lo escribís.' }}
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-semibold small">
+              {{ t.ct_field_expires if t is defined else 'Fecha de vencimiento (opcional)' }}
+            </label>
+            <input type="date" name="expires_at" class="form-control"
+                   style="max-width:220px;" />
+            <div class="form-text">
+              {{ t.ct_field_expires_hint if t is defined else 'Si no se firma antes de esta fecha, el contrato expira automáticamente.' }}
+            </div>
+          </div>
+
+          <!-- Botones de acción -->
+          <div class="d-flex gap-3 flex-wrap">
+            <button type="submit" name="action" value="draft"
+                    class="btn btn-outline-secondary fw-semibold px-4">
+              💾 {{ t.ct_btn_draft if t is defined else 'Guardar como borrador' }}
+            </button>
+            <button type="submit" name="action" value="send"
+                    class="btn btn-pal fw-bold px-5">
+              📤 {{ t.ct_btn_send_now if t is defined else 'Enviar al cliente ahora' }}
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Panel de ayuda ─────────────────────────────────────────────────────── -->
+  <div class="col-12 col-lg-4">
+
+    <!-- Flujo del contrato -->
+    <div class="card border-0 shadow-sm mb-3" style="border-radius:14px;">
+      <div class="card-body p-4">
+        <h3 class="fs-6 fw-bold mb-3">
+          {{ 'Cómo funciona' if lang == 'es' else 'How it works' }}
+        </h3>
+        <ol class="list-unstyled mb-0 d-flex flex-column gap-3" style="font-size:.85rem; color:#374151;">
+          <li class="d-flex gap-2 align-items-start">
+            <span style="background:#fff7ed;color:#9a3412;border-radius:50%;
+                         width:22px;height:22px;display:flex;align-items:center;
+                         justify-content:center;font-weight:900;font-size:.75rem;flex-shrink:0;">1</span>
+            <span>{{ 'Creás el contrato con el texto que necesitás' if lang == 'es' else 'Create the contract with your desired text' }}</span>
+          </li>
+          <li class="d-flex gap-2 align-items-start">
+            <span style="background:#fff7ed;color:#9a3412;border-radius:50%;
+                         width:22px;height:22px;display:flex;align-items:center;
+                         justify-content:center;font-weight:900;font-size:.75rem;flex-shrink:0;">2</span>
+            <span>{{ 'El cliente recibe un email con un enlace único para firmar' if lang == 'es' else 'The client receives an email with a unique link to sign' }}</span>
+          </li>
+          <li class="d-flex gap-2 align-items-start">
+            <span style="background:#fff7ed;color:#9a3412;border-radius:50%;
+                         width:22px;height:22px;display:flex;align-items:center;
+                         justify-content:center;font-weight:900;font-size:.75rem;flex-shrink:0;">3</span>
+            <span>{{ 'El cliente lee el contrato y firma con su nombre' if lang == 'es' else 'The client reads the contract and signs with their name' }}</span>
+          </li>
+          <li class="d-flex gap-2 align-items-start">
+            <span style="background:#fff7ed;color:#9a3412;border-radius:50%;
+                         width:22px;height:22px;display:flex;align-items:center;
+                         justify-content:center;font-weight:900;font-size:.75rem;flex-shrink:0;">4</span>
+            <span>{{ 'Ambos reciben confirmación por email. El contrato queda archivado en tu panel.' if lang == 'es' else 'Both receive email confirmation. The contract is archived in your panel.' }}</span>
+          </li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- Consejo -->
+    <div class="card border-0 p-3"
+         style="background:#f0fdf4;border:1.5px solid #bbf7d0 !important;border-radius:12px;">
+      <div class="small" style="color:#166534;">
+        💡 <strong>{{ 'Consejo:' if lang == 'es' else 'Tip:' }}</strong>
+        {{ 'Podés guardar el contrato como borrador primero, revisarlo y enviarlo cuando estés listo.' if lang == 'es' else 'You can save as draft first, review it, and send when ready.' }}
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}

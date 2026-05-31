@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+{% block title %}{{ t.rep_title if t is defined else 'Reportes de ingresos' }} — PressAndLive{% endblock %}
+
+{% block content %}
+
+<!-- Encabezado -->
+<div class="d-flex align-items-start justify-content-between flex-wrap gap-3 mb-4">
+  <div>
+    <a href="/modulos/facturacion-cobros" class="btn btn-sm btn-outline-secondary fw-semibold mb-2">
+      ← {{ t.modulo_back if t is defined else 'Volver al módulo' }}
+    </a>
+    <h1 class="fw-black fs-3 mb-1">📊 {{ t.rep_title if t is defined else 'Reportes de ingresos' }}</h1>
+    <p class="text-muted small mb-0">{{ t.rep_subtitle if t is defined else 'Resumen de facturación mensual' }}</p>
+  </div>
+  <a href="/reportes-ingresos/exportar" class="btn btn-outline-secondary fw-semibold align-self-end">
+    ⬇️ {{ t.rep_export if t is defined else 'Exportar CSV' }}
+  </a>
+</div>
+
+<!-- ── Filtro de mes / año ────────────────────────────────────────────────── -->
+<form method="get" action="/reportes-ingresos"
+      class="d-flex align-items-center gap-2 flex-wrap mb-4">
+  <label class="fw-semibold small text-muted">
+    {{ t.rep_filter_label if t is defined else 'Filtrar por mes:' }}
+  </label>
+
+  <select name="mes" class="form-select form-select-sm" style="width:auto;">
+    {% set mes_names = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                        'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+       if lang == 'es' else
+       ['January','February','March','April','May','June',
+        'July','August','September','October','November','December'] %}
+    {% for i in range(1, 13) %}
+    <option value="{{ i }}" {% if i == sel_mes %}selected{% endif %}>
+      {{ mes_names[i-1] }}
+    </option>
+    {% endfor %}
+  </select>
+
+  <select name="anio" class="form-select form-select-sm" style="width:auto;">
+    {% for y in range(current_year, current_year - 3, -1) %}
+    <option value="{{ y }}" {% if y == sel_anio %}selected{% endif %}>{{ y }}</option>
+    {% endfor %}
+  </select>
+
+  <button type="submit" class="btn btn-pal btn-sm fw-semibold">
+    {{ 'Ver' if lang == 'es' else 'View' }}
+  </button>
+</form>
+
+<!-- ── 3 tarjetas de estadísticas ────────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+
+  <!-- Ingreso mes actual -->
+  <div class="col-12 col-sm-4">
+    <div class="card border-0 shadow-sm h-100" style="border-radius:12px;">
+      <div class="card-body p-4">
+        <div class="text-muted small mb-1">
+          {{ t.rep_current_month if t is defined else 'Este mes' }}
+        </div>
+        <div class="fw-black text-pal lh-1 mb-2" style="font-size:2rem;">
+          ${{ "%.2f"|format(current_total) }}
+        </div>
+        <!-- Variación vs. mes anterior -->
+        {% if pct_change > 0 %}
+          <div class="small" style="color:#16a34a;">
+            ▲ {{ pct_change }}% {{ t.rep_vs_prev if t is defined else 'vs. mes anterior' }}
+          </div>
+        {% elif pct_change < 0 %}
+          <div class="small" style="color:#dc2626;">
+            ▼ {{ pct_change|abs }}% {{ t.rep_vs_prev if t is defined else 'vs. mes anterior' }}
+          </div>
+        {% else %}
+          <div class="small text-muted">
+            — {{ t.rep_vs_prev if t is defined else 'vs. mes anterior' }}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Ingreso mes anterior -->
+  <div class="col-12 col-sm-4">
+    <div class="card border-0 shadow-sm h-100" style="border-radius:12px;">
+      <div class="card-body p-4">
+        <div class="text-muted small mb-1">
+          {{ t.rep_prev_month if t is defined else 'Mes anterior' }}
+        </div>
+        <div class="fw-black lh-1 mb-2" style="font-size:2rem; color:#374151;">
+          ${{ "%.2f"|format(prev_total) }}
+        </div>
+        <div class="small text-muted">
+          {{ 'Referencia comparativa' if lang == 'es' else 'Comparison reference' }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cantidad de pagos del mes -->
+  <div class="col-12 col-sm-4">
+    <div class="card border-0 shadow-sm h-100" style="border-radius:12px;">
+      <div class="card-body p-4">
+        <div class="text-muted small mb-1">
+          {{ t.rep_transactions if t is defined else 'Pagos registrados' }}
+        </div>
+        <div class="fw-black lh-1 mb-2" style="font-size:2rem; color:#374151;">
+          {{ month_count }}
+        </div>
+        <div class="small text-muted">
+          {{ 'transacciones este mes' if lang == 'es' else 'transactions this month' }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Gráfico de barras — últimos 6 meses ───────────────────────────────── -->
+<div class="card border-0 shadow-sm mb-4" style="border-radius:12px;">
+  <div class="card-body p-4">
+    <h2 class="fs-6 fw-bold mb-3">
+      📈 {{ t.rep_chart_title if t is defined else 'Últimos 6 meses' }}
+    </h2>
+    <div style="position:relative; height:220px;">
+      <canvas id="chart-ingresos"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ── Tabla de pagos del mes seleccionado ───────────────────────────────── -->
+<div class="card border-0 shadow-sm mb-4" style="border-radius:12px; overflow:hidden;">
+  <div class="card-body p-4 pb-2">
+    <h2 class="fs-6 fw-bold mb-0">
+      📋 {{ t.rep_table_title if t is defined else 'Pagos recientes' }}
+    </h2>
+  </div>
+
+  {% if recent_payments %}
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead style="background:#fff7ed;">
+        <tr>
+          <th class="px-4 py-3 fw-bold small text-uppercase" style="color:#9a3412; letter-spacing:.4px;">
+            {{ t.rep_col_date if t is defined else 'Fecha' }}
+          </th>
+          <th class="py-3 fw-bold small text-uppercase" style="color:#9a3412; letter-spacing:.4px;">
+            {{ t.rep_col_amount if t is defined else 'Monto' }}
+          </th>
+          <th class="py-3 fw-bold small text-uppercase" style="color:#9a3412; letter-spacing:.4px;">
+            {{ t.rep_col_status if t is defined else 'Estado' }}
+          </th>
+          <th class="pe-4 py-3 fw-bold small text-uppercase d-none d-md-table-cell"
+              style="color:#9a3412; letter-spacing:.4px;">
+            {{ t.rep_col_order if t is defined else 'ID Orden' }}
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in recent_payments %}
+        <tr>
+          <td class="px-4 py-3" style="font-size:.88rem;">
+            {{ p.created_at.strftime('%d/%m/%Y') }}
+            <div class="text-muted" style="font-size:.75rem;">
+              {{ p.created_at.strftime('%H:%M') }}
+            </div>
+          </td>
+          <td class="py-3 fw-bold text-pal" style="font-size:.95rem;">
+            ${{ "%.2f"|format(p.amount_cents / 100) }}
+          </td>
+          <td class="py-3">
+            {% if p.status == 'paid' %}
+              <span class="badge rounded-pill"
+                    style="background:#dcfce7; color:#166534; font-size:.72rem; font-weight:600; padding:4px 10px;">
+                ✅ {{ t.rep_paid if t is defined else 'Pagado' }}
+              </span>
+            {% else %}
+              <span class="badge rounded-pill"
+                    style="background:#fef3c7; color:#92400e; font-size:.72rem; font-weight:600; padding:4px 10px;">
+                ⏳ {{ t.rep_pending if t is defined else 'Pendiente' }}
+              </span>
+            {% endif %}
+          </td>
+          <td class="pe-4 py-3 d-none d-md-table-cell text-muted" style="font-size:.8rem; font-family:monospace;">
+            {{ p.lemon_order_id or '—' }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% else %}
+  <div class="text-center p-5 text-muted">
+    <div class="fs-2 mb-2">📊</div>
+    <div>{{ t.rep_no_data if t is defined else 'No hay pagos registrados para este período.' }}</div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ── Nota aclaratoria ───────────────────────────────────────────────────── -->
+<div class="card border-0 mb-2 p-3"
+     style="background:#f8fafc; border-radius:10px; font-size:.82rem; color:#64748b;">
+  {{ t.rep_note if t is defined else '💡 Estos datos reflejan los pagos de suscripción a PressAndLive.' }}
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+const ctx = document.getElementById('chart-ingresos').getContext('2d');
+new Chart(ctx, {
+  type: 'bar',
+  data: {
+    labels: {{ chart_labels | safe }},
+    datasets: [{
+      label: '{{ "Ingresos (USD)" if lang == "es" else "Income (USD)" }}',
+      data:  {{ chart_values | safe }},
+      backgroundColor: 'rgba(249, 115, 22, 0.75)',
+      borderColor:     '#F97316',
+      borderWidth:     2,
+      borderRadius:    6,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: ctx => ' $' + ctx.parsed.y.toFixed(2)
+        }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          callback: val => '$' + val.toFixed(0),
+          color: '#6b7280',
+          font: { size: 11 }
+        },
+        grid: { color: '#f3f4f6' }
+      },
+      x: {
+        ticks: { color: '#6b7280', font: { size: 11 } },
+        grid:  { display: false }
+      }
+    }
+  }
+});
+</script>
+{% endblock %}

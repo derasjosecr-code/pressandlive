@@ -1,0 +1,113 @@
+/* PressAndLive — overrides sobre Bootstrap 5 */
+:root {
+  --pal-orange:      #f97316;
+  --pal-orange-dark: #ea6c0a;
+  --pal-orange-light:#fff7ed;
+  --pal-black:       #1a1a1a;
+}
+
+/* ── Colores de marca sobre Bootstrap ── */
+.btn-pal {
+  background-color: var(--pal-orange);
+  border-color:     var(--pal-orange);
+  color: #fff;
+  font-weight: 600;
+}
+.btn-pal:hover, .btn-pal:focus {
+  background-color: var(--pal-orange-dark);
+  border-color:     var(--pal-orange-dark);
+  color: #fff;
+}
+.btn-outline-pal {
+  border-color: var(--pal-orange);
+  color: var(--pal-orange);
+  font-weight: 600;
+}
+.btn-outline-pal:hover {
+  background-color: var(--pal-orange);
+  color: #fff;
+}
+.text-pal   { color: var(--pal-orange) !important; }
+.bg-pal     { background-color: var(--pal-orange) !important; }
+.bg-pal-light { background-color: var(--pal-orange-light) !important; }
+.border-pal { border-color: var(--pal-orange) !important; }
+
+/* ── Navbar ── */
+.navbar-brand .logo-icon {
+  width: 34px; height: 34px;
+  position: relative; display: inline-block; vertical-align: middle;
+  margin-right: 6px;
+}
+.logo-shadow {
+  position: absolute; bottom: 0; left: 0;
+  width: 34px; height: 31px;
+  background: #c05000; border-radius: 8px;
+}
+.logo-face {
+  position: absolute; top: 0; left: 0;
+  width: 34px; height: 29px;
+  background: var(--pal-orange); border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+}
+.logo-dot {
+  width: 9px; height: 9px;
+  background: #fff; border-radius: 50%; opacity: .9;
+}
+.brand-text       { font-weight: 900; font-size: 1.1rem; color: var(--pal-black); }
+.brand-text span  { color: var(--pal-orange); font-weight: 300; }
+
+/* ── Inputs con focus naranja ── */
+.form-control:focus, .form-select:focus {
+  border-color: var(--pal-orange);
+  box-shadow: 0 0 0 .2rem rgba(249,115,22,.2);
+}
+
+/* ── Cards de acción en dashboard ── */
+.action-card {
+  text-decoration: none; color: var(--pal-black);
+  transition: border-color .18s, transform .15s;
+  display: block;
+}
+.action-card:hover {
+  border-color: var(--pal-orange) !important;
+  transform: translateY(-2px);
+  color: var(--pal-black);
+}
+
+/* ── Toggle switch (horarios) ── */
+.pal-switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+.pal-switch input { opacity: 0; width: 0; height: 0; }
+.pal-slider {
+  position: absolute; cursor: pointer; inset: 0;
+  background: #ced4da; border-radius: 999px; transition: .2s;
+}
+.pal-slider:before {
+  content: ""; position: absolute;
+  width: 18px; height: 18px; border-radius: 50%;
+  left: 3px; bottom: 3px; background: #fff; transition: .2s;
+}
+.pal-switch input:checked + .pal-slider { background: var(--pal-orange); }
+.pal-switch input:checked + .pal-slider:before { transform: translateX(20px); }
+
+/* ── Time group (horarios) ── */
+.time-group {
+  opacity: .3; pointer-events: none; transition: opacity .2s;
+}
+.time-group.enabled { opacity: 1; pointer-events: all; }
+
+/* ── Booking public page ── */
+.slot-btn {
+  width: 100%; padding: 10px 4px;
+  border: 1.5px solid #dee2e6; border-radius: 8px;
+  background: #fff; font-size: .85rem; font-weight: 700;
+  cursor: pointer; transition: all .15s;
+}
+.slot-btn:hover   { border-color: var(--pal-orange); background: var(--pal-orange-light); }
+.slot-btn.selected{ border-color: var(--pal-orange); background: var(--pal-orange); color: #fff; }
+
+/* ── Página de auth (centrada) ── */
+.auth-wrap {
+  min-height: 100vh; display: flex;
+  align-items: center; justify-content: center;
+  background: #f8f9fa; padding: 24px 16px;
+}

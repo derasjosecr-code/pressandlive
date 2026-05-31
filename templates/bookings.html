@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}{{ t.bookings_title if t is defined else 'Mis citas' }} — PressAndLive{% endblock %}
+
+{% block content %}
+
+<!-- Meses según idioma -->
+{% if lang is defined and lang == 'en' %}
+  {% set meses = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] %}
+{% else %}
+  {% set meses = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'] %}
+{% endif %}
+
+<div class="mb-4">
+  <h1 class="fw-black fs-3 mb-1">
+    {{ t.bookings_title if t is defined else 'Mis citas' }}
+  </h1>
+  <p class="text-muted small mb-0">
+    {{ t.bookings_subtitle if t is defined else 'Historial completo de reservas' }}
+  </p>
+</div>
+
+<!-- Filtros -->
+<div class="d-flex gap-2 mb-4 flex-wrap">
+  <button class="btn btn-pal btn-sm rounded-pill px-3 filter-btn"
+          onclick="filterBookings('all', this)">
+    {{ t.bookings_filter_all if t is defined else 'Todas' }}
+  </button>
+  <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 filter-btn"
+          onclick="filterBookings('upcoming', this)">
+    {{ t.bookings_filter_upcoming if t is defined else 'Próximas' }}
+  </button>
+  <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 filter-btn"
+          onclick="filterBookings('past', this)">
+    {{ t.bookings_filter_past if t is defined else 'Pasadas' }}
+  </button>
+  <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 filter-btn"
+          onclick="filterBookings('cancelled', this)">
+    {{ t.bookings_filter_cancelled if t is defined else 'Canceladas' }}
+  </button>
+</div>
+
+{% if bookings %}
+  <div class="d-flex flex-column gap-2">
+  {% for b in bookings %}
+    {% set parts = b.date.split('-') %}
+    <div class="card shadow-sm {% if b.status == 'cancelled' %}opacity-50{% endif %}"
+         data-status="{{ b.status }}"
+         data-date="{{ b.date }}">
+      <div class="card-body d-flex align-items-start gap-3 flex-wrap py-3">
+
+        <!-- Bloque de fecha -->
+        <div class="text-center rounded-3 p-2 px-3 flex-shrink-0"
+             style="background:var(--pal-orange-light); min-width:80px;">
+          <div class="fs-3 fw-black text-pal lh-1">{{ parts[2] }}</div>
+          <div class="text-uppercase fw-bold" style="font-size:10px; color:#9a3412; letter-spacing:.5px;">
+            {{ meses[parts[1]|int] }} {{ parts[0] }}
+          </div>
+          <div class="text-muted" style="font-size:11px; margin-top:4px;">
+            {{ b.start_time }} – {{ b.end_time }}
+          </div>
+        </div>
+
+        <!-- Datos del cliente -->
+        <div class="flex-grow-1">
+          <div class="fw-bold mb-1">{{ b.client_name }}</div>
+          <div class="text-muted small">📧 {{ b.client_email }}</div>
+          {% if b.client_phone %}
+            <div class="text-muted small">📱 {{ b.client_phone }}</div>
+          {% endif %}
+          {% if b.notes %}
+            <div class="text-muted small fst-italic mt-1">"{{ b.notes }}"</div>
+          {% endif %}
+        </div>
+
+        <!-- Estado y acciones -->
+        <div class="d-flex flex-column align-items-end gap-2 flex-shrink-0">
+          {% if b.status == 'confirmed' %}
+            {% set cancel_msg = t.bookings_cancel_confirm if t is defined else '¿Cancelar esta cita?' %}
+            <span class="badge bg-success rounded-pill">
+              {{ t.bookings_confirmed if t is defined else 'Confirmada' }}
+            </span>
+            <form method="post" action="/bookings/{{ b.id }}/cancel"
+                  onsubmit="return confirm('{{ cancel_msg }}')">
+              <button type="submit" class="btn btn-outline-danger btn-sm">
+                {{ t.bookings_cancel_btn if t is defined else 'Cancelar' }}
+              </button>
+            </form>
+          {% else %}
+            <span class="badge bg-secondary rounded-pill">
+              {{ t.bookings_cancelled if t is defined else 'Cancelada' }}
+            </span>
+          {% endif %}
+        </div>
+
+      </div>
+    </div>
+  {% endfor %}
+  </div>
+{% else %}
+  <div class="card border-0 shadow-sm text-center p-5 text-muted">
+    📭 {{ t.bookings_empty if t is defined else 'Todavía no tenés citas registradas. Compartí tu enlace de agenda para recibir reservas.' }}
+  </div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const today = "{{ today }}";
+
+function filterBookings(type, btn) {
+  // Actualizar estilo de botones
+  document.querySelectorAll('.filter-btn').forEach(b => {
+    b.classList.remove('btn-pal');
+    b.classList.add('btn-outline-secondary');
+  });
+  btn.classList.remove('btn-outline-secondary');
+  btn.classList.add('btn-pal');
+
+  // Filtrar tarjetas
+  document.querySelectorAll('[data-status]').forEach(card => {
+    const status = card.dataset.status;
+    const date   = card.dataset.date;
+    let show = true;
+    if (type === 'upcoming')  show = date >= today && status === 'confirmed';
+    if (type === 'past')      show = date <  today && status === 'confirmed';
+    if (type === 'cancelled') show = status === 'cancelled';
+    card.style.display = show ? '' : 'none';
+  });
+}
+</script>
+{% endblock %}

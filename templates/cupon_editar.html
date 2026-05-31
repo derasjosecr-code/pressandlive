@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% block title %}{{ t.cup_edit_title }} — PressAndLive{% endblock %}
+
+{% block content %}
+
+<div class="mb-4">
+  <a href="/cupones" class="btn btn-sm btn-outline-secondary fw-semibold mb-2">
+    ← {{ 'Volver a cupones' if lang == 'es' else 'Back to coupons' }}
+  </a>
+  <h1 class="fw-black fs-3 mb-0">✏️ {{ t.cup_edit_title }}: <code>{{ coupon.code }}</code></h1>
+</div>
+
+<div class="row g-4">
+
+  <!-- ── Formulario ────────────────────────────────────────────────────────── -->
+  <div class="col-12 col-lg-8">
+    <div class="card border-0 shadow-sm" style="border-radius:14px;">
+      <div class="card-body p-4">
+
+        {% if error %}
+        <div class="alert alert-danger py-2 small mb-3">{{ error }}</div>
+        {% endif %}
+
+        <form method="post" action="/cupones/{{ coupon.id }}/editar">
+
+          <!-- Código -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">{{ t.cup_field_code }}</label>
+            <input type="text" name="code" class="form-control text-uppercase fw-bold"
+                   value="{{ coupon.code }}"
+                   style="letter-spacing:1px; font-family:monospace; font-size:1rem;"
+                   oninput="this.value=this.value.toUpperCase()" required />
+            <div class="form-text">{{ t.cup_field_code_hint }}</div>
+          </div>
+
+          <!-- Descripción -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">{{ t.cup_field_desc }}</label>
+            <input type="text" name="description" class="form-control"
+                   value="{{ coupon.description }}"
+                   placeholder="{{ 'Ej: Descuento de verano para clientes nuevos' if lang == 'es' else 'E.g. Summer discount for new clients' }}" />
+          </div>
+
+          <!-- Tipo y valor -->
+          <div class="row g-3 mb-3">
+            <div class="col-sm-5">
+              <label class="form-label fw-semibold small">{{ t.cup_field_type }}</label>
+              <select name="discount_type" class="form-select" id="type-select"
+                      onchange="updateValueLabel()">
+                <option value="percent" {% if coupon.discount_type == 'percent' %}selected{% endif %}>
+                  {{ t.cup_type_percent }}
+                </option>
+                <option value="fixed" {% if coupon.discount_type == 'fixed' %}selected{% endif %}>
+                  {{ t.cup_type_fixed }}
+                </option>
+              </select>
+            </div>
+            <div class="col-sm-7">
+              <label class="form-label fw-semibold small">
+                {{ t.cup_field_value }} <span id="value-suffix" class="text-muted fw-normal">
+                  {% if coupon.discount_type == 'percent' %}(%){% endif %}
+                </span>
+              </label>
+              <input type="number" name="discount_value" class="form-control"
+                     value="{{ coupon.discount_value }}"
+                     min="0.01" step="0.01" required />
+            </div>
+          </div>
+
+          <!-- Máx. usos -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">{{ t.cup_field_max_uses }}</label>
+            <input type="number" name="max_uses" class="form-control"
+                   value="{{ coupon.max_uses if coupon.max_uses is not none else '' }}"
+                   min="1" step="1" placeholder="{{ t.cup_unlimited }}" />
+            {% if coupon.uses_count > 0 %}
+            <div class="form-text text-muted">
+              {{ 'Usos actuales' if lang == 'es' else 'Current uses' }}: <strong>{{ coupon.uses_count }}</strong>
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- Fechas -->
+          <div class="row g-3 mb-4">
+            <div class="col-sm-6">
+              <label class="form-label fw-semibold small">{{ t.cup_field_from }}</label>
+              <input type="date" name="valid_from" class="form-control"
+                     value="{{ coupon.valid_from.strftime('%Y-%m-%d') if coupon.valid_from else '' }}" />
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label fw-semibold small">{{ t.cup_field_until }}</label>
+              <input type="date" name="valid_until" class="form-control"
+                     value="{{ coupon.valid_until.strftime('%Y-%m-%d') if coupon.valid_until else '' }}" />
+            </div>
+          </div>
+
+          <!-- Activo -->
+          <div class="mb-4">
+            <div class="form-check form-switch">
+              <input type="checkbox" name="is_active" value="on"
+                     class="form-check-input" id="is-active-check"
+                     {% if coupon.is_active %}checked{% endif %} />
+              <label class="form-check-label fw-semibold small" for="is-active-check">
+                {{ t.cup_field_active }}
+              </label>
+            </div>
+          </div>
+
+          <!-- Botones -->
+          <div class="d-flex gap-2 flex-wrap">
+            <button type="submit" class="btn btn-pal fw-bold px-4">
+              💾 {{ t.cup_btn_save }}
+            </button>
+            <a href="/cupones" class="btn btn-outline-secondary fw-semibold px-4">
+              {{ t.cup_btn_cancel }}
+            </a>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Panel de estadísticas del cupón ───────────────────────────────────── -->
+  <div class="col-12 col-lg-4">
+    <div class="card border-0 shadow-sm" style="border-radius:14px;">
+      <div class="card-body p-4">
+        <h3 class="fw-bold fs-6 mb-3">
+          📊 {{ 'Estadísticas' if lang == 'es' else 'Statistics' }}
+        </h3>
+        <dl class="d-flex flex-column gap-3 mb-0" style="font-size:.88rem;">
+          <div>
+            <dt class="text-muted fw-normal small text-uppercase" style="letter-spacing:.4px;">
+              {{ 'Total de usos' if lang == 'es' else 'Total uses' }}
+            </dt>
+            <dd class="fw-bold fs-5 mb-0" style="color:#9a3412;">{{ coupon.uses_count }}</dd>
+          </div>
+          <div>
+            <dt class="text-muted fw-normal small text-uppercase" style="letter-spacing:.4px;">
+              {{ 'Creado el' if lang == 'es' else 'Created on' }}
+            </dt>
+            <dd class="fw-semibold mb-0">{{ coupon.created_at.strftime('%d/%m/%Y') }}</dd>
+          </div>
+          {% if coupon.usages %}
+          <div>
+            <dt class="text-muted fw-normal small text-uppercase mb-2" style="letter-spacing:.4px;">
+              {{ 'Últimos usos' if lang == 'es' else 'Recent uses' }}
+            </dt>
+            {% for u in coupon.usages[-5:]|reverse %}
+            <dd class="mb-1 small">
+              <span class="fw-semibold">{{ u.client_name or u.client_email }}</span>
+              <span class="text-muted"> — {{ u.used_at.strftime('%d/%m/%Y') }}</span>
+            </dd>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </dl>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function updateValueLabel() {
+  const type = document.getElementById('type-select').value;
+  const suffix = document.getElementById('value-suffix');
+  suffix.textContent = type === 'percent' ? '(%)' : '';
+}
+</script>
+{% endblock %}

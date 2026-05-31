@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}{{ module.name_es if lang != 'en' else module.name_en }} — PressAndLive{% endblock %}
+
+{% block content %}
+
+<div class="text-center py-5">
+
+  <div class="mb-4" style="font-size:4rem;">{{ module.icon }}</div>
+
+  <h1 class="fw-black fs-2 mb-2">
+    {% if lang == 'en' %}{{ module.name_en }}{% else %}{{ module.name_es }}{% endif %}
+  </h1>
+
+  <p class="text-muted mb-4" style="max-width:420px;margin:0 auto;">
+    {% if lang == 'en' %}{{ module.desc_en }}{% else %}{{ module.desc_es }}{% endif %}
+  </p>
+
+  <div class="card border-0 shadow-sm d-inline-block px-5 py-4 mb-4">
+    <div class="text-uppercase fw-bold small text-muted mb-2" style="letter-spacing:.5px;">
+      {% if lang == 'en' %}Coming soon{% else %}Próximamente{% endif %}
+    </div>
+    <div class="text-muted" style="font-size:.9rem;">
+      {% if lang == 'en' %}
+        This module is in development. It will be available shortly.
+      {% else %}
+        Este módulo está en desarrollo. Estará disponible en breve.
+      {% endif %}
+    </div>
+  </div>
+
+  <br/>
+  <a href="/dashboard" class="btn btn-pal fw-semibold">
+    ← {% if lang == 'en' %}Back to dashboard{% else %}Volver al dashboard{% endif %}
+  </a>
+
+</div>
+
+{% endblock %}

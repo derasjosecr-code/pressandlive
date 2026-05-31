@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block title %}{{ t.social_posts_title }} — PressAndLive{% endblock %}
+
+{% block content %}
+
+<!-- Volver + acciones -->
+<div class="mb-4 d-flex align-items-center justify-content-between gap-2 flex-wrap">
+  <a href="/social/accounts" class="btn btn-sm btn-outline-secondary fw-semibold">
+    {{ t.social_back_accounts }}
+  </a>
+  <a href="/social/posts/nuevo" class="btn btn-pal btn-sm fw-bold">
+    ✍️ {{ t.social_new_post_btn }}
+  </a>
+</div>
+
+<!-- Encabezado -->
+<div class="d-flex align-items-center gap-3 mb-4 flex-wrap">
+  <div class="fs-1 lh-1">📋</div>
+  <div>
+    <h1 class="fw-black fs-4 mb-0">{{ t.social_posts_title }}</h1>
+    <div class="text-muted small">
+      {{ posts|length }}
+      {{ 'publicación' if posts|length == 1 else 'publicaciones' if lang == 'es' else 'post' if posts|length == 1 else 'posts' }}
+    </div>
+  </div>
+</div>
+
+<!-- Alertas -->
+{% if request.query_params.get('ok') %}
+<div class="alert alert-success d-flex align-items-center gap-2 mb-3"
+     style="border-radius:10px; font-size:.875rem;">
+  <span>✅</span>
+  <span>
+    {% set ok_val = request.query_params.get('ok') %}
+    {% if ok_val == 'eliminado' %}
+      {{ 'Publicación eliminada.' if lang == 'es' else 'Post deleted.' }}
+    {% elif ok_val == 'publicado' %}
+      {{ 'Publicación enviada correctamente.' if lang == 'es' else 'Post published successfully.' }}
+    {% else %}
+      {{ 'Publicación guardada.' if lang == 'es' else 'Post saved.' }}
+    {% endif %}
+  </span>
+</div>
+{% endif %}
+
+{% if posts %}
+
+<!-- Leyenda de estados -->
+<div class="d-flex gap-2 flex-wrap mb-3">
+  {% for status, label, color in [
+    ('published', t.social_status_published, '#16a34a'),
+    ('scheduled', t.social_status_scheduled, '#2563eb'),
+    ('failed',    t.social_status_failed,    '#dc2626'),
+    ('draft',     t.social_status_draft,     '#6b7280'),
+  ] %}
+  <span class="badge rounded-pill px-3 py-2"
+        style="background:{{ color }}20; color:{{ color }}; font-size:.75rem; font-weight:600;">
+    {% if status == 'published' %}✅{% elif status == 'scheduled' %}🕒{% elif status == 'failed' %}❌{% else %}📝{% endif %}
+    {{ label }}
+  </span>
+  {% endfor %}
+</div>
+
+<!-- Lista de publicaciones -->
+<div class="d-flex flex-column gap-3">
+  {% for post in posts %}
+  {% set pl = platforms.get(post.platform, {}) %}
+
+  <div class="card border-0 shadow-sm" style="border-radius:12px;">
+    <div class="card-body p-4">
+
+      <!-- Cabecera: plataforma + estado + fecha -->
+      <div class="d-flex align-items-start justify-content-between gap-3 mb-3 flex-wrap">
+        <div class="d-flex align-items-center gap-2">
+          <span style="font-size:1.3rem;">{{ pl.icon if pl else '🌐' }}</span>
+          <span class="fw-bold" style="color:{{ pl.color if pl else '#374151' }}; font-size:.9rem;">
+            {{ pl.label if pl else post.platform }}
+          </span>
+        </div>
+
+        <!-- Badge de estado -->
+        {% if post.status == 'published' %}
+          <span class="badge rounded-pill px-3"
+                style="background:#dcfce7; color:#16a34a; font-weight:600; font-size:.75rem;">
+            ✅ {{ t.social_status_published }}
+          </span>
+        {% elif post.status == 'scheduled' %}
+          <span class="badge rounded-pill px-3"
+                style="background:#dbeafe; color:#2563eb; font-weight:600; font-size:.75rem;">
+            🕒 {{ t.social_status_scheduled }}
+          </span>
+        {% elif post.status == 'failed' %}
+          <span class="badge rounded-pill px-3"
+                style="background:#fee2e2; color:#dc2626; font-weight:600; font-size:.75rem;">
+            ❌ {{ t.social_status_failed }}
+          </span>
+        {% else %}
+          <span class="badge rounded-pill px-3"
+                style="background:#f3f4f6; color:#6b7280; font-weight:600; font-size:.75rem;">
+            📝 {{ t.social_status_draft }}
+          </span>
+        {% endif %}
+      </div>
+
+      <!-- Contenido del post -->
+      <p class="mb-2" style="font-size:.92rem; color:#374151; white-space:pre-wrap;">{{ post.content }}</p>
+
+      <!-- Imagen si existe -->
+      {% if post.image_url %}
+      <div class="mb-2">
+        <img src="{{ post.image_url }}" alt="Post image"
+             style="max-height:160px; border-radius:8px; object-fit:cover;"
+             onerror="this.style.display='none'" />
+      </div>
+      {% endif %}
+
+      <!-- Metadatos -->
+      <div class="d-flex gap-3 flex-wrap text-muted" style="font-size:.78rem; border-top:1px solid #f3f4f6; padding-top:.5rem; margin-top:.5rem;">
+        {% if post.published_at %}
+        <span>✅ {{ post.published_at.strftime('%d/%m/%Y %H:%M') }}</span>
+        {% endif %}
+        {% if post.scheduled_at and post.status == 'scheduled' %}
+        <span>🕒 {{ post.scheduled_at.strftime('%d/%m/%Y %H:%M') }}</span>
+        {% endif %}
+        {% if post.error_message %}
+        <span style="color:#dc2626;">⚠️ {{ post.error_message }}</span>
+        {% endif %}
+        <span>📅 {{ post.created_at.strftime('%d/%m/%Y') }}</span>
+      </div>
+
+      <!-- Acciones -->
+      <div class="d-flex gap-2 mt-3 flex-wrap">
+        {% if post.status in ['scheduled', 'draft', 'failed'] %}
+        <form method="post" action="/social/posts/{{ post.id }}/publicar" class="m-0">
+          <button type="submit" class="btn btn-sm btn-pal fw-semibold">
+            🚀 {{ t.social_publish_btn }}
+          </button>
+        </form>
+        {% endif %}
+        <form method="post" action="/social/posts/{{ post.id }}/eliminar" class="m-0">
+          <button type="submit" class="btn btn-sm btn-outline-danger"
+                  onclick="return confirm('{{ '¿Eliminar esta publicación?' if lang == 'es' else 'Delete this post?' }}')">
+            🗑️ {{ t.social_delete_btn }}
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% else %}
+<!-- Estado vacío -->
+<div class="card border-0 bg-white shadow-sm text-center p-5" style="border-radius:12px;">
+  <div class="fs-2 mb-3">✍️</div>
+  <div class="fw-bold mb-1">{{ t.social_no_posts }}</div>
+  <div class="text-muted small mb-4">{{ t.social_no_posts_sub }}</div>
+  <div>
+    <a href="/social/posts/nuevo" class="btn btn-pal fw-bold px-4">
+      ✍️ {{ t.social_new_post_btn }}
+    </a>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

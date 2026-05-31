@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+{% block title %}{{ t.enc_results_title }} — {{ survey.title }} — PressAndLive{% endblock %}
+
+{% block content %}
+
+<div class="mb-4">
+  <a href="/encuestas" class="btn btn-sm btn-outline-secondary fw-semibold mb-2">
+    ← {{ 'Volver a encuestas' if lang == 'es' else 'Back to surveys' }}
+  </a>
+  <h1 class="fw-black fs-3 mb-0">📊 {{ t.enc_results_title }}</h1>
+  <div class="text-muted small mt-1">{{ survey.title }}</div>
+</div>
+
+{% if total == 0 %}
+<!-- ── Estado vacío ───────────────────────────────────────────────────────── -->
+<div class="card border-0 shadow-sm text-center p-5" style="border-radius:16px;">
+  <div style="font-size:3rem; margin-bottom:16px;">📭</div>
+  <h2 class="fw-bold fs-5 mb-2">{{ t.enc_results_no_resp }}</h2>
+  <p class="text-muted small">
+    {% if lang == 'es' %}
+    Cuando actives la encuesta, el enlace se enviará automáticamente a nuevos clientes.
+    {% else %}
+    Once you activate the survey, the link will be sent automatically to new clients.
+    {% endif %}
+  </p>
+</div>
+
+{% else %}
+
+<!-- ── Tarjetas de resumen ────────────────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+
+  <!-- Promedio -->
+  <div class="col-12 col-md-4">
+    <div class="card border-0 shadow-sm h-100 text-center p-4" style="border-radius:14px;">
+      <div class="text-muted small fw-semibold mb-2">{{ t.enc_results_avg }}</div>
+      <div class="fw-black" style="font-size:3rem; color:#f97316; line-height:1;">
+        {{ avg_rating }}
+      </div>
+      <div style="font-size:1.4rem; color:#f59e0b; margin:6px 0;">
+        {% for i in range(1, 6) %}
+          {% if i <= avg_rating | int %}★{% elif (avg_rating % 1) >= 0.5 and i == (avg_rating | int) + 1 %}½{% else %}☆{% endif %}
+        {% endfor %}
+      </div>
+      <div class="text-muted small">{{ t.enc_results_total }}: <strong>{{ total }}</strong></div>
+    </div>
+  </div>
+
+  <!-- Total de respuestas -->
+  <div class="col-12 col-md-4">
+    <div class="card border-0 shadow-sm h-100 text-center p-4" style="border-radius:14px;">
+      <div class="text-muted small fw-semibold mb-2">{{ t.enc_results_total }}</div>
+      <div class="fw-black" style="font-size:3rem; color:#374151; line-height:1;">{{ total }}</div>
+      <div class="text-muted small mt-2">
+        {% if lang == 'es' %}opiniones recibidas{% else %}reviews received{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- % que recomiendan -->
+  <div class="col-12 col-md-4">
+    <div class="card border-0 shadow-sm h-100 text-center p-4" style="border-radius:14px;">
+      <div class="text-muted small fw-semibold mb-2">{{ t.enc_results_recommend }}</div>
+      <div class="fw-black" style="font-size:3rem; line-height:1;
+            color:{% if pct_recommend >= 80 %}#16a34a{% elif pct_recommend >= 50 %}#d97706{% else %}#dc2626{% endif %};">
+        {{ pct_recommend }}%
+      </div>
+      <div class="text-muted small mt-2">
+        {% if lang == 'es' %}recomendarían este profesional{% else %}would recommend this professional{% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Distribución de estrellas ─────────────────────────────────────────── -->
+<div class="card border-0 shadow-sm mb-4" style="border-radius:14px;">
+  <div class="card-body p-4">
+    <h2 class="fw-bold fs-6 mb-4">{{ t.enc_results_dist }}</h2>
+    <div class="d-flex flex-column gap-2" style="max-width:520px;">
+      {% for star in range(5, 0, -1) %}
+      {% set info = dist[star] %}
+      <div class="d-flex align-items-center gap-3">
+        <div class="fw-semibold text-end" style="min-width:20px; color:#374151;">{{ star }}</div>
+        <div style="font-size:1rem; color:#f59e0b; min-width:14px;">★</div>
+        <div class="flex-grow-1 rounded-pill" style="background:#f3f4f6; height:16px; overflow:hidden;">
+          <div class="rounded-pill h-100"
+               style="width:{{ info.pct }}%;
+                      background:{% if star >= 4 %}#f97316{% elif star == 3 %}#f59e0b{% else %}#d1d5db{% endif %};
+                      transition:width .4s ease;">
+          </div>
+        </div>
+        <div class="text-muted small" style="min-width:54px;">
+          {{ info.count }}
+          <span style="color:#9ca3af;">({{ info.pct }}%)</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- ── Comentarios ────────────────────────────────────────────────────────── -->
+<div class="card border-0 shadow-sm" style="border-radius:14px;">
+  <div class="card-body p-4">
+    <h2 class="fw-bold fs-6 mb-4">{{ t.enc_results_comments }}</h2>
+
+    {% set has_comments = responses | selectattr("comments") | list %}
+    {% if not has_comments %}
+    <p class="text-muted small">
+      {% if lang == 'es' %}Ningún cliente dejó comentarios aún.{% else %}No clients have left comments yet.{% endif %}
+    </p>
+    {% else %}
+    <div class="d-flex flex-column gap-3">
+      {% for r in responses %}
+      {% if r.comments %}
+      <div class="p-3 rounded-3" style="background:#f9fafb; border:1px solid #e5e7eb;">
+        <!-- Encabezado: nombre + fecha + estrellas -->
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+          <div>
+            <span class="fw-semibold small" style="color:#374151;">
+              {{ r.client_name or t.enc_results_anon }}
+            </span>
+            <span class="text-muted" style="font-size:.75rem; margin-left:8px;">
+              {{ r.created_at.strftime('%d/%m/%Y') }}
+            </span>
+          </div>
+          <div style="color:#f59e0b; font-size:.9rem;">
+            {% for i in range(r.rating) %}★{% endfor %}{% for i in range(5 - r.rating) %}☆{% endfor %}
+          </div>
+        </div>
+        <!-- Comentario -->
+        <p class="mb-1 small" style="color:#374151; line-height:1.6; white-space:pre-wrap;">{{ r.comments }}</p>
+        <!-- Recomendaría -->
+        {% if r.would_recommend %}
+        <span style="font-size:.75rem; color:#16a34a; font-weight:600;">
+          👍 {{ 'Recomendaría' if lang == 'es' else 'Would recommend' }}
+        </span>
+        {% else %}
+        <span style="font-size:.75rem; color:#9ca3af;">
+          {{ 'No por ahora' if lang == 'es' else 'Not right now' }}
+        </span>
+        {% endif %}
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Tabla completa de respuestas (sin comentarios también) -->
+    <details class="mt-4">
+      <summary class="text-muted small fw-semibold" style="cursor:pointer; user-select:none;">
+        {{ 'Ver todas las respuestas (' if lang == 'es' else 'View all responses (' }}{{ total }})
+      </summary>
+      <div class="table-responsive mt-3">
+        <table class="table table-sm table-hover align-middle" style="font-size:.85rem;">
+          <thead style="background:#f8f9fa;">
+            <tr>
+              <th class="fw-semibold text-muted py-2 ps-3">
+                {{ 'Cliente' if lang == 'es' else 'Client' }}
+              </th>
+              <th class="fw-semibold text-muted py-2">
+                {{ 'Calificación' if lang == 'es' else 'Rating' }}
+              </th>
+              <th class="fw-semibold text-muted py-2">
+                {{ 'Recomienda' if lang == 'es' else 'Recommends' }}
+              </th>
+              <th class="fw-semibold text-muted py-2">
+                {{ 'Fecha' if lang == 'es' else 'Date' }}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in responses %}
+            <tr>
+              <td class="ps-3 py-2">
+                <div class="fw-semibold">{{ r.client_name or t.enc_results_anon }}</div>
+                {% if r.client_email %}
+                <div class="text-muted" style="font-size:.75rem;">{{ r.client_email }}</div>
+                {% endif %}
+              </td>
+              <td class="py-2">
+                <span style="color:#f59e0b;">{% for i in range(r.rating) %}★{% endfor %}</span>
+                <span class="fw-bold ms-1">{{ r.rating }}/5</span>
+              </td>
+              <td class="py-2">
+                {% if r.would_recommend %}
+                <span style="color:#16a34a; font-size:.8rem; font-weight:600;">✓ {{ 'Sí' if lang == 'es' else 'Yes' }}</span>
+                {% else %}
+                <span class="text-muted" style="font-size:.8rem;">✗ No</span>
+                {% endif %}
+              </td>
+              <td class="py-2 text-muted" style="white-space:nowrap;">
+                {{ r.created_at.strftime('%d/%m/%Y %H:%M') }}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </details>
+
+  </div>
+</div>
+
+{% endif %}
+
+{% endblock %}
