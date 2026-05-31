@@ -1427,7 +1427,7 @@ def startup():
                 conn.execute(text(sql))
                 conn.commit()
             except Exception:
-                pass  # La columna ya existe, se ignora
+                conn.rollback()  # Limpiar el estado de error antes de continuar
     db = next(get_db())
     try:
         seed_modules(db)
