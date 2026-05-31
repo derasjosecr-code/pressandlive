@@ -1299,6 +1299,7 @@ def startup():
             "ALTER TABLE modules ADD COLUMN features_json TEXT DEFAULT '{}'",
             "ALTER TABLE professionals ADD COLUMN currency TEXT DEFAULT 'USD'",
             "ALTER TABLE professionals ADD COLUMN business_type TEXT DEFAULT 'otro'",
+            "UPDATE modules SET price_cents = 1200",
             "ALTER TABLE professionals ADD COLUMN country TEXT DEFAULT ''",
             "ALTER TABLE professionals ADD COLUMN city TEXT DEFAULT ''",
             "ALTER TABLE professionals ADD COLUMN bio TEXT DEFAULT ''",
