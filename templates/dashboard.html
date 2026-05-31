@@ -301,4 +301,84 @@ document.getElementById('qr-img').src =
   'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' +
   encodeURIComponent(agendaUrl);
 </script>
+
+<!-- ── Asistente IA flotante para el profesional ───────────────────────── -->
+<style>
+#asist-fab{position:fixed;bottom:24px;right:24px;width:56px;height:56px;border-radius:50%;background:#F97316;color:#fff;border:none;font-size:24px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.2);z-index:1000;display:flex;align-items:center;justify-content:center;}
+#asist-box{position:fixed;bottom:92px;right:24px;width:360px;max-height:500px;background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.15);z-index:1000;display:none;flex-direction:column;overflow:hidden;}
+#asist-header{background:#F97316;color:#fff;padding:14px 16px;font-weight:700;font-size:15px;display:flex;justify-content:space-between;align-items:center;}
+#asist-msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;min-height:200px;max-height:320px;}
+.asist-msg{padding:10px 14px;border-radius:12px;font-size:14px;line-height:1.5;max-width:85%;}
+.asist-msg.bot{background:#f3f4f6;color:#1A1A1A;align-self:flex-start;border-bottom-left-radius:4px;}
+.asist-msg.user{background:#F97316;color:#fff;align-self:flex-end;border-bottom-right-radius:4px;}
+#asist-input-row{display:flex;border-top:1px solid #e5e7eb;padding:10px;}
+#asist-input{flex:1;border:none;outline:none;font-size:14px;padding:6px 8px;}
+#asist-send{background:#F97316;color:#fff;border:none;border-radius:8px;padding:6px 14px;cursor:pointer;font-weight:700;}
+</style>
+
+<button id="asist-fab" onclick="toggleAsist()" title="Asistente IA">🤖</button>
+
+<div id="asist-box">
+  <div id="asist-header">
+    <span>🤖 Asistente IA</span>
+    <button onclick="toggleAsist()" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;">✕</button>
+  </div>
+  <div id="asist-msgs">
+    <div class="asist-msg bot">¡Hola! Soy tu asistente. Podés preguntarme sobre tus citas, clientes o cómo usar la app.</div>
+  </div>
+  <div id="asist-input-row">
+    <input id="asist-input" type="text" placeholder="Preguntame algo..." onkeydown="if(event.key==='Enter')sendAsist()"/>
+    <button id="asist-send" onclick="sendAsist()">➤</button>
+  </div>
+</div>
+
+<script>
+let asistHistory = [];
+let asistOpen = false;
+
+function toggleAsist() {
+  asistOpen = !asistOpen;
+  document.getElementById('asist-box').style.display = asistOpen ? 'flex' : 'none';
+  if (asistOpen) document.getElementById('asist-input').focus();
+}
+
+function appendAsistMsg(role, text) {
+  const msgs = document.getElementById('asist-msgs');
+  const div = document.createElement('div');
+  div.className = 'asist-msg ' + (role === 'user' ? 'user' : 'bot');
+  div.textContent = text;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+async function sendAsist() {
+  const input = document.getElementById('asist-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  appendAsistMsg('user', text);
+  asistHistory.push({ role: 'user', content: text });
+
+  const typing = document.createElement('div');
+  typing.className = 'asist-msg bot';
+  typing.textContent = '...';
+  typing.id = 'asist-typing';
+  document.getElementById('asist-msgs').appendChild(typing);
+
+  try {
+    const res = await fetch('/api/asistente', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: asistHistory }),
+    });
+    const data = await res.json();
+    typing.remove();
+    appendAsistMsg('bot', data.reply);
+    asistHistory.push({ role: 'assistant', content: data.reply });
+  } catch {
+    typing.remove();
+    appendAsistMsg('bot', 'No puedo responder ahora. Intentá más tarde.');
+  }
+}
+</script>
 {% endblock %}

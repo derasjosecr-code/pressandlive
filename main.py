@@ -14,6 +14,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 import httpx
+from openai import AsyncOpenAI
 from dotenv import load_dotenv
 from fastapi import FastAPI, Depends, Request, Form, HTTPException, UploadFile, File
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
@@ -38,6 +39,9 @@ from database import (
 )
 
 load_dotenv()
+
+# ── OpenAI ────────────────────────────────────────────────────────────────────
+_openai_client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # ── Monedas locales — tipos de cambio desde .env ──────────────────────────────
 CURRENCIES: dict = {
@@ -5032,4 +5036,109 @@ async def profesional_perfil(slug: str, request: Request, db: Session = Depends(
         "avg_rating":     avg_rating,
         "review_count":   review_count,
     })
+
+
+# ── Chatbot para clientes (agenda pública) ────────────────────────────────────
+
+@app.post("/api/chat/{slug}")
+@limiter.limit("30/minute")
+async def chat_cliente(slug: str, request: Request, db: Session = Depends(get_db)):
+    """Chatbot IA para clientes en la agenda pública del profesional."""
+    prof = db.query(Professional).filter(Professional.slug == slug).first()
+    if not prof:
+        raise HTTPException(status_code=404)
+
+    if not os.getenv("OPENAI_API_KEY"):
+        return JSONResponse({"reply": "El chatbot no está configurado aún."})
+
+    data = await request.json()
+    messages = data.get("messages", [])
+    if not messages:
+        raise HTTPException(status_code=400, detail="Sin mensajes")
+
+    # Sistema: quién es el profesional y qué puede responder
+    appt_word = get_appointment_word(prof.business_type or "otro")
+    system_prompt = (
+        f"Sos un asistente virtual de {prof.name}, "
+        f"{prof.specialty or 'profesional independiente'}, "
+        f"ubicado/a en {prof.city or ''} {prof.country or ''}. "
+        f"Ayudás a los clientes que quieren agendar una {appt_word}. "
+        f"Respondés preguntas sobre el profesional, sus servicios, horarios y reservas. "
+        f"{'Descripción del profesional: ' + prof.bio if prof.bio else ''} "
+        f"Si no sabés algo específico (como el precio exacto de un servicio), "
+        f"invitá al cliente a reservar o a contactar directamente al profesional. "
+        f"Sé amable, breve y útil. Respondé siempre en el mismo idioma que el cliente."
+    )
+
+    try:
+        response = await _openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "system", "content": system_prompt}] + messages[-10:],
+            max_tokens=300,
+            temperature=0.7,
+        )
+        reply = response.choices[0].message.content
+    except Exception as e:
+        reply = "Lo siento, no puedo responder en este momento. Intentá más tarde."
+
+    return JSONResponse({"reply": reply})
+
+
+# ── Asistente IA para el profesional (panel) ──────────────────────────────────
+
+@app.post("/api/asistente")
+@limiter.limit("30/minute")
+async def asistente_profesional(request: Request, db: Session = Depends(get_db)):
+    """Asistente IA para el profesional dentro de su panel."""
+    prof = get_prof(request, db)
+    if not prof:
+        raise HTTPException(status_code=401)
+
+    if not os.getenv("OPENAI_API_KEY"):
+        return JSONResponse({"reply": "El asistente no está configurado aún."})
+
+    data = await request.json()
+    messages = data.get("messages", [])
+    if not messages:
+        raise HTTPException(status_code=400, detail="Sin mensajes")
+
+    # Contexto real del profesional
+    proximas = db.query(Booking).filter(
+        Booking.professional_id == prof.id,
+        Booking.status == "confirmed",
+        Booking.date >= date.today().isoformat(),
+    ).order_by(Booking.date, Booking.start_time).limit(10).all()
+
+    citas_texto = ""
+    if proximas:
+        citas_texto = "Próximas citas confirmadas:\n" + "\n".join(
+            f"- {b.date} {b.start_time}: {b.client_name} ({b.client_email})"
+            for b in proximas
+        )
+    else:
+        citas_texto = "No tenés citas próximas confirmadas."
+
+    appt_word = get_appointment_word(prof.business_type or "otro")
+    system_prompt = (
+        f"Sos el asistente personal de {prof.name}, "
+        f"{prof.specialty or 'profesional'} en {prof.city or ''} {prof.country or ''}. "
+        f"Ayudás al profesional a gestionar su agenda y negocio en PressAndLive. "
+        f"La palabra que usan para 'cita' es '{appt_word}'. "
+        f"{citas_texto} "
+        f"Respondé de forma clara, breve y útil. "
+        f"Si te preguntan algo que no podés saber, decilo honestamente."
+    )
+
+    try:
+        response = await _openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "system", "content": system_prompt}] + messages[-10:],
+            max_tokens=400,
+            temperature=0.7,
+        )
+        reply = response.choices[0].message.content
+    except Exception as e:
+        reply = "No puedo responder en este momento. Intentá más tarde."
+
+    return JSONResponse({"reply": reply})
 
