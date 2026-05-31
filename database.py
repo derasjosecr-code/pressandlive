@@ -6,14 +6,22 @@ from sqlalchemy import create_engine, Column, Integer, String, Text, Boolean, Fo
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 
-# En Railway usamos /data/pressandlive.db (volumen persistente)
-# En local usamos ./pressandlive.db
-_DB_PATH = os.getenv("DB_PATH", "./pressandlive.db")
-SQLALCHEMY_DATABASE_URL = f"sqlite:///{_DB_PATH}"
+# En Render usamos PostgreSQL (variable DATABASE_URL)
+# En local usamos SQLite (./pressandlive.db)
+_DATABASE_URL = os.getenv("DATABASE_URL", "")
 
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
-)
+if _DATABASE_URL and _DATABASE_URL.startswith("postgres"):
+    # Render entrega "postgres://..." pero SQLAlchemy necesita "postgresql+psycopg2://..."
+    if _DATABASE_URL.startswith("postgres://"):
+        _DATABASE_URL = _DATABASE_URL.replace("postgres://", "postgresql+psycopg2://", 1)
+    SQLALCHEMY_DATABASE_URL = _DATABASE_URL
+    engine = create_engine(SQLALCHEMY_DATABASE_URL)
+else:
+    _DB_PATH = os.getenv("DB_PATH", "./pressandlive.db")
+    SQLALCHEMY_DATABASE_URL = f"sqlite:///{_DB_PATH}"
+    engine = create_engine(
+        SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+    )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
