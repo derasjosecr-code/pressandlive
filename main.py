@@ -1675,8 +1675,22 @@ def send_email(to: str, subject: str, html: str) -> None:
     threading.Thread(target=_send, daemon=True).start()
 
 
-def _email_base(contenido_html: str) -> str:
+def _email_base(contenido_html: str, prof: "Professional | None" = None) -> str:
     """Envuelve contenido en el template base de email con estilos PressAndLive."""
+    # Avatar del profesional
+    if prof and prof.avatar_url:
+        avatar_html = f'<img src="{prof.avatar_url}" alt="{prof.name}" width="64" height="64" style="border-radius:50%;object-fit:cover;border:3px solid #fff;margin-bottom:8px;display:block;"/>'
+    else:
+        iniciales = "".join([n[0].upper() for n in (prof.name if prof else "PL").split()[:2]])
+        avatar_html = f'<div style="width:64px;height:64px;border-radius:50%;background:#fff3;border:3px solid #fff;display:inline-flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;color:#fff;margin-bottom:8px;">{iniciales}</div>'
+
+    prof_info = ""
+    if prof:
+        prof_info = f'<p style="margin:4px 0 0;font-size:13px;color:rgba(255,255,255,.85);">{prof.specialty or ""}</p>' if prof.specialty else ""
+        prof_nombre = f'<p style="margin:8px 0 0;font-size:16px;font-weight:700;color:#fff;">{prof.name}</p>'
+    else:
+        prof_nombre = ""
+
     return f"""<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -1684,33 +1698,36 @@ def _email_base(contenido_html: str) -> str:
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>PressAndLive</title>
 </head>
-<body style="margin:0;padding:0;background:#f5f5f5;font-family:Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5;padding:32px 16px;">
+<body style="margin:0;padding:0;background:#f3f4f6;font-family:Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:24px 12px;">
     <tr><td align="center">
       <table width="600" cellpadding="0" cellspacing="0"
-             style="background:#ffffff;border-radius:12px;overflow:hidden;
-                    box-shadow:0 2px 8px rgba(0,0,0,.08);max-width:600px;width:100%;">
-        <!-- Cabecera naranja -->
+             style="background:#ffffff;border-radius:16px;overflow:hidden;
+                    box-shadow:0 4px 16px rgba(0,0,0,.10);max-width:600px;width:100%;">
+
+        <!-- Cabecera naranja con logo + avatar profesional -->
         <tr>
-          <td style="background:#F97316;padding:28px 32px;text-align:center;">
-            <span style="font-size:22px;font-weight:900;color:#ffffff;letter-spacing:-0.5px;">
-              Press<span style="color:#1A1A1A;">And</span>Live
-            </span>
+          <td style="background:linear-gradient(135deg,#F97316,#ea6c0e);padding:28px 24px 24px;text-align:center;">
+            <p style="margin:0 0 16px;font-size:13px;font-weight:700;color:rgba(255,255,255,.7);letter-spacing:1px;text-transform:uppercase;">Enviado por</p>
+            {avatar_html}
+            {prof_nombre}
+            {prof_info}
+            <p style="margin:20px 0 0;font-size:11px;color:rgba(255,255,255,.5);">via <strong style="color:rgba(255,255,255,.8);">PressAndLive</strong></p>
           </td>
         </tr>
+
         <!-- Contenido -->
         <tr>
-          <td style="padding:32px 32px 24px;">
+          <td style="padding:28px 24px 20px;">
             {contenido_html}
           </td>
         </tr>
+
         <!-- Pie -->
         <tr>
-          <td style="background:#f9f9f9;padding:20px 32px;text-align:center;
-                     border-top:1px solid #eee;">
-            <p style="margin:0;font-size:12px;color:#999;">
-              Este mensaje fue enviado automáticamente por
-              <a href="https://pressandlive.com" style="color:#F97316;text-decoration:none;">PressAndLive</a>.
+          <td style="background:#f9fafb;padding:16px 24px;text-align:center;border-top:1px solid #e5e7eb;">
+            <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6;">
+              Mensaje automático de <a href="https://pressandlive.com" style="color:#F97316;text-decoration:none;font-weight:700;">PressAndLive</a>.<br/>
               Por favor no respondas este correo.
             </p>
           </td>
@@ -1791,7 +1808,7 @@ def email_confirmacion_cliente(booking: Booking, prof: Professional, cancel_url:
       Si el botón no funciona, copiá este enlace: <a href="{cancel_url}" style="color:#F97316;">{cancel_url}</a>
     </p>
     """
-    return _email_base(contenido)
+    return _email_base(contenido, prof)
 
 
 # ── Mensajes de bienvenida por defecto (Módulo 5) ────────────────────────────
@@ -1892,7 +1909,7 @@ def email_bienvenida_cliente(
       </tr>
     </table>
     """
-    return _email_base(contenido)
+    return _email_base(contenido, prof)
 
 
 def email_notificacion_profesional(booking: Booking, prof: Professional) -> str:
@@ -1949,12 +1966,12 @@ def email_notificacion_profesional(booking: Booking, prof: Professional) -> str:
 
     <p style="margin:0;color:#555;font-size:14px;line-height:1.6;">
       Podés ver y gestionar esta cita desde tu
-      <a href="http://localhost:8000/bookings" style="color:#F97316;font-weight:700;">
+      <a href="https://pressandlive.com/bookings" style="color:#F97316;font-weight:700;">
         panel de control →
       </a>
     </p>
     """
-    return _email_base(contenido)
+    return _email_base(contenido, prof)
 
 
 # ── Lógica de turnos disponibles ──────────────────────────────────────────────
@@ -2270,7 +2287,7 @@ def _email_contrato_cliente(contract: "Contract", prof: "Professional", sign_url
       {pie}
     </p>
     """
-    return _email_base(contenido)
+    return _email_base(contenido, prof)
 
 
 def _email_contrato_firmado_prof(contract: "Contract", prof: "Professional", lang: str) -> str:
@@ -2305,7 +2322,7 @@ def _email_contrato_firmado_prof(contract: "Contract", prof: "Professional", lan
       <strong>{contract.client_email}</strong>
     </p>
     """
-    return _email_base(contenido)
+    return _email_base(contenido, prof)
 
 
 def _email_contrato_firmado_cliente(contract: "Contract", prof: "Professional", lang: str) -> str:
@@ -2329,7 +2346,7 @@ def _email_contrato_firmado_cliente(contract: "Contract", prof: "Professional", 
     <p style="margin:0 0 20px;color:#555;font-size:15px;">{sub}</p>
     <p style="margin:0;color:#9ca3af;font-size:13px;">{fecha}</p>
     """
-    return _email_base(contenido)
+    return _email_base(contenido, prof)
 
 
 # ── Rutas del módulo de contratos ─────────────────────────────────────────────
@@ -2902,7 +2919,7 @@ def _email_referido_referidor(referrer_name: str, referee_name: str,
         )
         subject = f"🎉 ¡{referee_name} usó tu enlace de referido!"
 
-    return _email_base(body)
+    return _email_base(body, prof)
 
 
 # ── Módulo Encuestas de satisfacción ─────────────────────────────────────────
@@ -4803,7 +4820,7 @@ async def waitlist_notify(entry_id: int, request: Request, db: Session = Depends
             <p style="color:#6b7280;font-size:.85rem;">
               If you've already booked or no longer need the appointment, you can ignore this email.
             </p>
-        """)
+        """, prof)
     else:
         subject = f"Hay un turno disponible — {prof.name}"
         body_html = _email_base(f"""
@@ -4821,7 +4838,7 @@ async def waitlist_notify(entry_id: int, request: Request, db: Session = Depends
             <p style="color:#6b7280;font-size:.85rem;">
               Si ya reservaste o ya no necesitás el turno, podés ignorar este email.
             </p>
-        """)
+        """, prof)
 
     try:
         send_email(to=entry.client_email, subject=subject, html=body_html)
