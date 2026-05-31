@@ -41,7 +41,7 @@ from database import (
 load_dotenv()
 
 # ── OpenAI ────────────────────────────────────────────────────────────────────
-_openai_client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+_openai_client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY") or "placeholder")
 
 # ── Monedas locales — tipos de cambio desde .env ──────────────────────────────
 CURRENCIES: dict = {
