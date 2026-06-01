@@ -1673,7 +1673,7 @@ def send_email(to: str, subject: str, html: str) -> None:
                 "https://api.resend.com/emails",
                 headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
                 json={
-                    "from": "PressAndLive <noreply@pressandlive.com>",
+                    "from": "PressAndLive <onboarding@resend.dev>",
                     "to": [to],
                     "subject": subject,
                     "html": html,
