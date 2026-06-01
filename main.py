@@ -21,7 +21,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Resp
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from itsdangerous import URLSafeSerializer
-from passlib.context import CryptContext
+import bcrypt as _bcrypt_lib
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
@@ -139,7 +139,14 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates  = Jinja2Templates(directory="templates")
 templates.env.globals["convert_to_local"]   = convert_to_local    # disponible en todos los templates
 templates.env.globals["get_country_flag"]   = get_country_flag    # bandera por nombre de país
-pwd_ctx    = CryptContext(schemes=["bcrypt"], deprecated="auto")
+def _hash_pwd(password: str) -> str:
+    return _bcrypt_lib.hashpw(password.encode("utf-8"), _bcrypt_lib.gensalt()).decode("utf-8")
+
+def _verify_pwd(password: str, hashed: str) -> bool:
+    try:
+        return _bcrypt_lib.checkpw(password.encode("utf-8"), hashed.encode("utf-8"))
+    except Exception:
+        return False
 
 # ── Seguridad: clave secreta, modo desarrollo y rate limiter ─────────────────
 SECRET_KEY             = os.getenv("SECRET_KEY", secrets.token_hex(32))   # Leer del .env; nunca hardcodeada
@@ -2110,7 +2117,7 @@ async def login(
     lang = get_lang(request)
     t    = TEXTS[lang]
     prof = db.query(Professional).filter(Professional.email == email).first()
-    if not prof or not pwd_ctx.verify(password, prof.password_hash):
+    if not prof or not _verify_pwd(password, prof.password_hash):
         return templates.TemplateResponse("index.html", {
             "request": request, "lang": lang, "t": t,
             "error": t["login_error_invalid"],
@@ -2171,7 +2178,7 @@ async def register(
 
     prof = Professional(
         name=name, email=email,
-        password_hash=pwd_ctx.hash(password),
+        password_hash=_hash_pwd(password),
         slug=slug, specialty=specialty,
         currency=currency,
         country=country.strip(),
