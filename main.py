@@ -1743,6 +1743,62 @@ def _email_base(contenido_html: str, prof: "Professional | None" = None) -> str:
 </html>"""
 
 
+
+def email_bienvenida_profesional(prof: "Professional") -> str:
+    """Email de bienvenida que se envía al profesional cuando crea su cuenta."""
+    agenda_url = f"https://pressandlive.com/agenda/{prof.slug}"
+    contenido = f"""
+    <h2 style="margin:0 0 8px;font-size:22px;font-weight:900;color:#1A1A1A;">
+      \u00a1Bienvenido/a a PressAndLive, {prof.name.split()[0]}! \U0001f389
+    </h2>
+    <p style="margin:0 0 20px;font-size:15px;color:#6b7280;">
+      Tu cuenta est\u00e1 lista. Ten\u00e9s <strong style="color:#F97316;">1 mes completamente gratis</strong>
+      para explorar todo lo que la app puede hacer por tu negocio.
+    </p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+      <tr>
+        <td style="background:#fff7ed;border-radius:12px;padding:20px 24px;border-left:4px solid #F97316;">
+          <p style="margin:0 0 14px;font-size:14px;font-weight:700;color:#C2410C;">
+            3 pasos para arrancar hoy:
+          </p>
+          <p style="margin:0 0 10px;font-size:14px;color:#374151;">
+            <strong style="color:#F97316;">1.</strong> &nbsp;Complet\u00e1 tu perfil, sub\u00ed tu foto y escrib\u00ed tu especialidad.
+          </p>
+          <p style="margin:0 0 10px;font-size:14px;color:#374151;">
+            <strong style="color:#F97316;">2.</strong> &nbsp;Configur\u00e1 tus horarios disponibles en el m\u00f3dulo Agenda.
+          </p>
+          <p style="margin:0;font-size:14px;color:#374151;">
+            <strong style="color:#F97316;">3.</strong> &nbsp;Compart\u00ed tu enlace de agenda con tus clientes.
+          </p>
+        </td>
+      </tr>
+    </table>
+    <p style="margin:0 0 8px;font-size:14px;color:#6b7280;">Tu enlace de agenda personal es:</p>
+    <table cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+      <tr>
+        <td style="background:#f3f4f6;border-radius:8px;padding:10px 16px;">
+          <a href="{agenda_url}" style="color:#F97316;font-weight:700;font-size:14px;text-decoration:none;">{agenda_url}</a>
+        </td>
+      </tr>
+    </table>
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+      <tr>
+        <td align="center">
+          <a href="https://pressandlive.com/dashboard"
+             style="display:inline-block;background:#F97316;color:#fff;font-weight:700;
+                    font-size:15px;padding:14px 32px;border-radius:10px;text-decoration:none;">
+            Ir a mi panel \u2192
+          </a>
+        </td>
+      </tr>
+    </table>
+    <p style="margin:0;font-size:13px;color:#9ca3af;line-height:1.6;">
+      Si ten\u00e9s alguna duda, respond\u00e9 este correo o escrib\u00ednos directamente.<br/>
+      Estamos aqu\u00ed para ayudarte a crecer. \U0001f680
+    </p>
+    """
+    return _email_base(contenido, prof=None)
+
 def email_confirmacion_cliente(booking: Booking, prof: Professional, cancel_url: str) -> str:
     """Email HTML de confirmación para el cliente."""
     contenido = f"""
@@ -2122,6 +2178,16 @@ async def register(
         city=city.strip(),
     )
     db.add(prof); db.commit(); db.refresh(prof)
+
+    # Email de bienvenida al nuevo profesional
+    try:
+        send_email(
+            to=prof.email,
+            subject="\u00a1Bienvenido/a a PressAndLive! Tu mes gratis empieza hoy \U0001f389",
+            html=email_bienvenida_profesional(prof),
+        )
+    except Exception as e:
+        print(f"[EMAIL] Error bienvenida profesional: {e}")
 
     token    = serializer.dumps({"id": prof.id})
     response = RedirectResponse("/dashboard", status_code=302)

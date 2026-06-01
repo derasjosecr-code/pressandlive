@@ -191,7 +191,7 @@
           {{ t.dashboard_link_label if t is defined else 'Tu enlace de agenda' }}
         </div>
         <div class="fw-semibold text-pal text-break mb-3" id="agenda-url" style="font-size:.9rem;">
-          http://localhost:8000/agenda/{{ prof.slug }}
+          {{ request.base_url }}agenda/{{ prof.slug }}
         </div>
         <div class="d-flex gap-2 flex-wrap">
 
