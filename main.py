@@ -1660,31 +1660,34 @@ def activar_modulos_profesional(db: Session, professional_id: int, module_ids: l
 # ── Sistema de email (Módulo 2: Recordatorios) ────────────────────────────────
 
 def send_email(to: str, subject: str, html: str) -> None:
-    """Envía un email HTML. Corre en hilo separado para no bloquear la respuesta."""
-    cfg = EMAIL_CONFIG
-    print(f"[EMAIL] sender_email='{cfg['sender_email']}' password_set={bool(cfg['sender_password'])} to='{to}'")
-    if not cfg["sender_email"] or not cfg["sender_password"]:
-        print("[EMAIL] No configurado — se omite el envío.")
+    """Envía un email HTML usando la API de Resend."""
+    api_key = os.getenv("RESEND_API_KEY", "")
+    if not api_key:
+        print("[EMAIL] RESEND_API_KEY no configurada — se omite el envío.")
         return
 
     def _send():
         try:
-            msg = MIMEMultipart("alternative")
-            msg["Subject"] = subject
-            msg["From"]    = f"PressAndLive <{cfg['sender_email']}>"
-            msg["To"]      = to
-            msg.attach(MIMEText(html, "html", "utf-8"))
-
-            with smtplib.SMTP(cfg["smtp_server"], cfg["smtp_port"]) as server:
-                server.ehlo()
-                server.starttls()
-                server.login(cfg["sender_email"], cfg["sender_password"])
-                server.sendmail(cfg["sender_email"], to, msg.as_string())
-            print(f"[EMAIL] ✅ Enviado a {to}")
+            import httpx as _httpx
+            resp = _httpx.post(
+                "https://api.resend.com/emails",
+                headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+                json={
+                    "from": "PressAndLive <noreply@pressandlive.com>",
+                    "to": [to],
+                    "subject": subject,
+                    "html": html,
+                },
+                timeout=15,
+            )
+            if resp.status_code == 200 or resp.status_code == 201:
+                print(f"[EMAIL] ✅ Enviado a {to}")
+            else:
+                print(f"[EMAIL] ❌ Error {resp.status_code}: {resp.text}")
         except Exception as e:
-            print(f"[EMAIL] ❌ Error al enviar a {to}: {e}")
+            print(f"[EMAIL] ❌ Excepción al enviar a {to}: {e}")
 
-    _send()  # debug: síncrono para ver errores en logs
+    threading.Thread(target=_send, daemon=True).start()
 
 
 def _email_base(contenido_html: str, prof: "Professional | None" = None) -> str:
