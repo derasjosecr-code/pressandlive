@@ -1662,6 +1662,7 @@ def activar_modulos_profesional(db: Session, professional_id: int, module_ids: l
 def send_email(to: str, subject: str, html: str) -> None:
     """Envía un email HTML. Corre en hilo separado para no bloquear la respuesta."""
     cfg = EMAIL_CONFIG
+    print(f"[EMAIL] sender_email='{cfg['sender_email']}' password_set={bool(cfg['sender_password'])} to='{to}'")
     if not cfg["sender_email"] or not cfg["sender_password"]:
         print("[EMAIL] No configurado — se omite el envío.")
         return
