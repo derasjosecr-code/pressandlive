@@ -1684,9 +1684,7 @@ def send_email(to: str, subject: str, html: str) -> None:
         except Exception as e:
             print(f"[EMAIL] ❌ Error al enviar a {to}: {e}")
 
-    t = threading.Thread(target=_send, daemon=False)
-    t.start()
-    t.join(timeout=15)  # espera hasta 15s para que el log aparezca
+    _send()  # debug: síncrono para ver errores en logs
 
 
 def _email_base(contenido_html: str, prof: "Professional | None" = None) -> str:
