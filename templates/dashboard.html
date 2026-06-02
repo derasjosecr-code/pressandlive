@@ -4,86 +4,85 @@
 {% block content %}
 
 {% if saved %}
-  <div class="alert alert-success alert-dismissible fade show" role="alert">
+  <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
     ✅ {{ t.dashboard_saved if t is defined else '¡Horarios guardados correctamente!' }}
     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
   </div>
 {% endif %}
 
-<!-- Título -->
-<div class="mb-4">
-  <h1 class="fw-black fs-3 mb-1">
-    {{ t.dashboard_hello if t is defined else 'Hola' }}, {{ prof.name.split()[0] }} 👋
-  </h1>
-  <p class="text-muted small mb-0">
-    {{ t.dashboard_subtitle if t is defined else 'Este es tu panel de control de PressAndLive' }}
-  </p>
+<!-- Hero banner -->
+<div class="dashboard-hero mb-4">
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+    <div>
+      <div class="section-label">{{ t.dashboard_subtitle if t is defined else 'Panel de control' }}</div>
+      <h1 class="fw-black mb-1" style="font-size:1.7rem;">
+        {{ t.dashboard_hello if t is defined else 'Hola' }}, {{ prof.name.split()[0] }} 👋
+      </h1>
+      <p class="text-muted small mb-0">{{ prof.specialty }}</p>
+    </div>
+    <a href="/catalogo" class="btn btn-pal px-4 fw-semibold">
+      {{ t.dashboard_modules_add if t is defined else '+ Agregar módulos' }}
+    </a>
+  </div>
 </div>
 
 <!-- Stats -->
 <div class="row g-3 mb-4">
   <div class="col-12 col-sm-4">
-    <div class="card border-0 shadow-sm h-100">
-      <div class="card-body">
-        <div class="fs-1 fw-black text-pal lh-1 mb-1">{{ upcoming|length }}</div>
-        <div class="text-muted small">{{ t.dashboard_upcoming if t is defined else 'Citas próximas' }}</div>
-      </div>
+    <div class="stat-card h-100">
+      <div class="stat-label">{{ t.dashboard_upcoming if t is defined else 'Citas próximas' }}</div>
+      <div class="stat-value text-pal">{{ upcoming|length }}</div>
     </div>
   </div>
   <div class="col-12 col-sm-4">
-    <div class="card border-0 shadow-sm h-100">
-      <div class="card-body">
-        <div class="fs-1 fw-black lh-1 mb-1 {% if unread > 0 %}text-pal{% else %}text-dark{% endif %}">
-          {{ unread }}
-        </div>
-        <div class="text-muted small">{{ t.dashboard_unread if t is defined else 'Notificaciones nuevas' }}</div>
-      </div>
+    <div class="stat-card h-100">
+      <div class="stat-label">{{ t.dashboard_unread if t is defined else 'Notificaciones' }}</div>
+      <div class="stat-value {% if unread > 0 %}text-pal{% endif %}">{{ unread }}</div>
     </div>
   </div>
   <div class="col-12 col-sm-4">
-    <div class="card border-0 shadow-sm h-100">
-      <div class="card-body">
-        <div class="fs-1 lh-1 mb-1">{% if has_sched %}✅{% else %}⚠️{% endif %}</div>
-        <div class="text-muted small">
-          {% if has_sched %}
-            {{ t.dashboard_schedule_status_ok if t is defined else 'Horarios configurados' }}
-          {% else %}
-            {{ t.dashboard_schedule_status_missing if t is defined else 'Sin horarios aún' }}
-          {% endif %}
-        </div>
+    <div class="stat-card h-100 {% if not has_sched %}stat-warning{% endif %}">
+      <div class="stat-label">
+        {% if has_sched %}
+          {{ t.dashboard_schedule_status_ok if t is defined else 'Horarios configurados' }}
+        {% else %}
+          {{ t.dashboard_schedule_status_missing if t is defined else 'Sin horarios' }}
+        {% endif %}
       </div>
+      <div class="stat-value" style="font-size:1.4rem;">{% if has_sched %}✅{% else %}<a href="/schedule" class="text-decoration-none" style="color:var(--pal-orange-deep);">Configurar →</a>{% endif %}</div>
     </div>
   </div>
 </div>
 
 <!-- Acciones rápidas -->
+<span class="section-label-sm">{{ t.dashboard_actions_title if t is defined else 'Acciones rápidas' }}</span>
 <div class="row g-3 mb-4">
-  <div class="col-12 col-md-4">
-    <a href="/schedule" class="card border shadow-sm action-card h-100 p-3">
-      <div class="fs-2 mb-2">📅</div>
-      <div class="fw-bold">{{ t.dashboard_action_schedule if t is defined else 'Configurar horarios' }}</div>
-      <div class="text-muted small">{{ t.dashboard_action_schedule_desc if t is defined else 'Definí los días y horas que atendés' }}</div>
+  <div class="col-6 col-md-3">
+    <a href="/schedule" class="action-card p-3 h-100">
+      <div class="action-icon">📅</div>
+      <div class="fw-bold" style="font-size:.9rem;">{{ t.dashboard_action_schedule if t is defined else 'Configurar horarios' }}</div>
+      <div class="text-muted" style="font-size:.78rem; margin-top:3px;">{{ t.dashboard_action_schedule_desc if t is defined else 'Días y horas que atendés' }}</div>
     </a>
   </div>
-  <div class="col-12 col-md-4">
-    <a href="/bookings" class="card border shadow-sm action-card h-100 p-3">
-      <div class="fs-2 mb-2">📋</div>
-      <div class="fw-bold">{{ t.dashboard_action_bookings if t is defined else 'Ver todas mis citas' }}</div>
-      <div class="text-muted small">{{ t.dashboard_action_bookings_desc if t is defined else 'Historial completo de reservas' }}</div>
+  <div class="col-6 col-md-3">
+    <a href="/bookings" class="action-card p-3 h-100">
+      <div class="action-icon">📋</div>
+      <div class="fw-bold" style="font-size:.9rem;">{{ t.dashboard_action_bookings if t is defined else 'Ver mis citas' }}</div>
+      <div class="text-muted" style="font-size:.78rem; margin-top:3px;">{{ t.dashboard_action_bookings_desc if t is defined else 'Historial completo' }}</div>
     </a>
   </div>
-  <div class="col-12 col-md-4">
-    <a href="/agenda/{{ prof.slug }}" target="_blank" class="card border shadow-sm action-card h-100 p-3">
-      <div class="fs-2 mb-2">👁️</div>
-      <div class="fw-bold">{{ t.dashboard_action_view if t is defined else 'Ver mi agenda' }}</div>
-      <div class="text-muted small">{{ t.dashboard_action_view_desc if t is defined else 'Cómo la ve tu cliente' }}</div>
+  <div class="col-6 col-md-3">
+    <a href="/agenda/{{ prof.slug }}" target="_blank" class="action-card p-3 h-100">
+      <div class="action-icon">👁️</div>
+      <div class="fw-bold" style="font-size:.9rem;">{{ t.dashboard_action_view if t is defined else 'Ver mi agenda' }}</div>
+      <div class="text-muted" style="font-size:.78rem; margin-top:3px;">{{ t.dashboard_action_view_desc if t is defined else 'Como la ve tu cliente' }}</div>
     </a>
   </div>
-  <div class="col-12 col-md-4">
-    <a href="/perfil/editar" class="card border shadow-sm action-card h-100 p-3">
-      <div class="fs-2 mb-2">✏️</div>
-      <div class="fw-bold">{{ t.dashboard_action_profile if t is defined else 'Editar perfil público' }}</div>
-      <div class="text-muted small">{{ t.dashboard_action_profile_desc if t is defined else 'Foto, bio y datos de contacto' }}</div>
+  <div class="col-6 col-md-3">
+    <a href="/perfil/editar" class="action-card p-3 h-100">
+      <div class="action-icon">✏️</div>
+      <div class="fw-bold" style="font-size:.9rem;">{{ t.dashboard_action_profile if t is defined else 'Editar perfil' }}</div>
+      <div class="text-muted" style="font-size:.78rem; margin-top:3px;">{{ t.dashboard_action_profile_desc if t is defined else 'Foto, bio y datos' }}</div>
     </a>
   </div>
 </div>
