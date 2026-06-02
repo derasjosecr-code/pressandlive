@@ -203,8 +203,18 @@ EMAIL_CONFIG = {
 LEMON_CONFIG = {
     "api_key":        os.getenv("LEMON_API_KEY", "").strip(),
     "store_id":       os.getenv("LEMON_STORE_ID", "").strip(),
-    "variant_id":     os.getenv("LEMON_VARIANT_ID", "").strip(),
+    "variant_id":     os.getenv("LEMON_VARIANT_ID", "").strip(),  # legado — no se usa con packs
     "webhook_secret": os.getenv("LEMON_WEBHOOK_SECRET", "").strip(),
+}
+
+# Variant IDs por pack (1–6 módulos)
+LEMON_PACK_VARIANT_IDS = {
+    1: os.getenv("LEMON_VARIANT_ID_PACK1", "").strip(),
+    2: os.getenv("LEMON_VARIANT_ID_PACK2", "").strip(),
+    3: os.getenv("LEMON_VARIANT_ID_PACK3", "").strip(),
+    4: os.getenv("LEMON_VARIANT_ID_PACK4", "").strip(),
+    5: os.getenv("LEMON_VARIANT_ID_PACK5", "").strip(),
+    6: os.getenv("LEMON_VARIANT_ID_PACK6", "").strip(),
 }
 
 DAYS_ES = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
@@ -1566,13 +1576,19 @@ MODULE_FEATURES = {
 
 # ── Lemon Squeezy (Módulo 3: Pagos) ──────────────────────────────────────────
 
-async def crear_checkout_lemon(amount_cents: int, payment_id: int, base_url: str) -> str:
+async def crear_checkout_lemon(amount_cents: int, payment_id: int, base_url: str, qty: int = 1) -> str:
     """Crea una sesión de checkout en Lemon Squeezy y devuelve la URL de pago."""
     cfg = LEMON_CONFIG
-    if not all([cfg["api_key"], cfg["store_id"], cfg["variant_id"]]):
+
+    # Seleccionar el Variant ID según la cantidad de módulos
+    variant_id = LEMON_PACK_VARIANT_IDS.get(qty, "")
+    if not variant_id:
+        variant_id = cfg["variant_id"]  # fallback al variant genérico (legado)
+
+    if not all([cfg["api_key"], cfg["store_id"], variant_id]):
         raise ValueError(
             "Lemon Squeezy no está configurado. "
-            "Completá LEMON_API_KEY, LEMON_STORE_ID y LEMON_VARIANT_ID en el archivo .env."
+            "Completá LEMON_API_KEY, LEMON_STORE_ID y LEMON_VARIANT_ID_PACK1..6 en el archivo .env."
         )
 
     payload = {
@@ -1589,12 +1605,12 @@ async def crear_checkout_lemon(amount_cents: int, payment_id: int, base_url: str
             },
             "relationships": {
                 "store":   {"data": {"type": "stores",   "id": str(cfg["store_id"])}},
-                "variant": {"data": {"type": "variants", "id": str(cfg["variant_id"])}},
+                "variant": {"data": {"type": "variants", "id": str(variant_id)}},
             },
         }
     }
 
-    print(f"[LEMON] Enviando checkout — store_id={cfg['store_id']} variant_id={cfg['variant_id']} amount_cents={amount_cents}")
+    print(f"[LEMON] Enviando checkout — store_id={cfg['store_id']} variant_id={variant_id} qty={qty} amount_cents={amount_cents}")
 
     async with httpx.AsyncClient(timeout=15.0) as client:
         resp = await client.post(
@@ -4194,7 +4210,7 @@ async def checkout(request: Request, db: Session = Depends(get_db)):
     # Crear checkout en Lemon Squeezy
     base_url = str(request.base_url).rstrip("/")
     try:
-        checkout_url = await crear_checkout_lemon(amount_cents, payment.id, base_url)
+        checkout_url = await crear_checkout_lemon(amount_cents, payment.id, base_url, qty=qty)
     except ValueError as e:
         # Lemon Squeezy no configurado — modo desarrollo: activar módulos directamente
         print(f"[CHECKOUT] ⚠️  {e} — activando módulos en modo desarrollo.")
