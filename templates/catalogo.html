@@ -3,20 +3,29 @@
 
 {% block content %}
 
-<!-- Encabezado -->
-<div class="mb-4">
-  <h1 class="fw-black fs-3 mb-1">
-    {{ t.catalog_title if t is defined else 'Catálogo de módulos' }}
-  </h1>
-  <p class="text-muted small mb-0">
-    {{ t.catalog_subtitle if t is defined else 'Elegí los módulos que necesitás. Pagás solo lo que usás.' }}
-  </p>
+<!-- ── Hero ─────────────────────────────────────────────────────────────────── -->
+<div class="dashboard-hero mb-4">
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+    <div>
+      <div class="section-label">PressAndLive</div>
+      <h1 class="fw-black mb-1" style="font-size:1.7rem;">
+        {{ t.catalog_title if t is defined else 'Catálogo de módulos' }}
+      </h1>
+      <p class="text-muted small mb-0">
+        {{ t.catalog_subtitle if t is defined else 'Elegí los módulos que necesitás. Pagás solo lo que usás.' }}
+      </p>
+    </div>
+    <div class="text-end">
+      <div class="fw-black text-pal" style="font-size:1.5rem;">desde $12<span class="fw-normal text-muted" style="font-size:.9rem;">/mes</span></div>
+      <div class="text-muted" style="font-size:.75rem;">{{ 'Paquete completo desde $42' if lang == 'es' else 'Full bundle from $42' }}</div>
+    </div>
+  </div>
 </div>
 
 <!-- ── Barra del carrito ─────────────────────────────────────────────────────── -->
 <div id="cart-bar" class="d-none mb-4">
   <div class="card border-0 shadow-sm"
-       style="background:#fff7ed; border:1.5px solid #fed7aa !important;">
+       style="background:#fff7ed; border:1.5px solid #fed7aa !important; border-radius:var(--pal-radius);">
     <div class="card-body py-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
       <div class="fw-semibold" style="color:#9a3412;">
         🛒 <span id="cart-count">0</span>
@@ -26,79 +35,52 @@
         <span class="fw-black text-pal" id="cart-total-bar">$0</span>
         {{ t.catalog_per_month if t is defined else '/mes' }}
       </div>
-      <a href="/carrito" class="btn btn-pal btn-sm fw-semibold">
+      <a href="/carrito" class="btn btn-pal btn-sm fw-semibold px-4">
         {{ t.catalog_view_cart if t is defined else 'Ver carrito' }} →
       </a>
     </div>
   </div>
 </div>
 
-<!-- ── Tabla de precios por pack ─────────────────────────────────────────────── -->
-<div class="card border-0 shadow-sm mb-4">
-  <div class="card-body p-3">
-    <div class="fw-bold mb-2 text-center" style="color:#374151;">
-      💡 {{ 'Precio según cantidad de módulos' if lang == 'es' else 'Price by number of modules' }}
-    </div>
-    <div class="table-responsive">
-      <table class="table table-sm text-center mb-0" style="font-size:.9rem;">
-        <thead>
-          <tr style="background:#fff7ed;">
-            <th style="color:#9a3412;">{{ '1 módulo' if lang == 'es' else '1 module' }}</th>
-            <th style="color:#9a3412;">{{ '2 módulos' if lang == 'es' else '2 modules' }}</th>
-            <th style="color:#9a3412;">{{ '3 módulos' if lang == 'es' else '3 modules' }}</th>
-            <th style="color:#9a3412;">{{ '4 módulos' if lang == 'es' else '4 modules' }}</th>
-            <th style="color:#9a3412;">{{ '5 módulos' if lang == 'es' else '5 modules' }}</th>
-            <th style="color:#9a3412;">{{ '6 módulos' if lang == 'es' else '6 modules' }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            {% for usd in [12, 20, 27, 33, 38, 42] %}
-            <td class="fw-semibold {% if loop.last %}text-pal{% endif %}">
-              ${{ usd }}<span class="text-muted fw-normal">/mes</span>
-              {% set local = convert_to_local(usd * 100, prof_currency) %}
-              {% if local %}<div style="font-size:.7rem;color:#6b7280;">{{ local }}</div>{% endif %}
-            </td>
-            {% endfor %}
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="text-center mt-2" style="font-size:.78rem; color:#6b7280;">
-      💳 {{ 'Los cobros se realizan en USD. El monto en moneda local es aproximado y puede variar según la tasa de cambio de tu banco.' if lang == 'es' else 'All charges are processed in USD. Local currency amounts are approximate and may vary based on your bank\'s exchange rate.' }}
-    </div>
+<!-- ── Precios por pack ───────────────────────────────────────────────────────── -->
+<span class="section-label-sm">{{ '💡 Precio según cantidad de módulos' if lang == 'es' else '💡 Price by number of modules' }}</span>
+<div class="d-flex gap-2 flex-wrap mb-4">
+  {% for item in [(1,12),(2,20),(3,27),(4,33),(5,38),(6,42)] %}
+  <div class="pack-pill {% if loop.last %}pack-pill--best{% endif %}">
+    <div class="pack-pill__n">{{ item[0] }} {{ 'mód.' if lang == 'es' else 'mod.' }}</div>
+    <div class="pack-pill__price">${{ item[1] }}<span>/mes</span></div>
+    {% if loop.last %}<div class="pack-pill__tag">{{ 'Mejor valor' if lang == 'es' else 'Best value' }}</div>{% endif %}
   </div>
+  {% endfor %}
+</div>
+<div class="mb-4" style="font-size:.75rem; color:var(--pal-gray);">
+  💳 {{ 'Los cobros se realizan en USD. El monto en moneda local es aproximado.' if lang == 'es' else 'All charges are processed in USD. Local currency amounts are approximate.' }}
 </div>
 
 <!-- ── Paquete completo ──────────────────────────────────────────────────────── -->
-<div class="card border-0 shadow mb-4"
-     style="background:var(--pal-orange);color:#fff;border-radius:14px;">
-  <div class="card-body p-4 d-flex flex-wrap align-items-center justify-content-between gap-3">
+<div class="bundle-card mb-4">
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
     <div>
-      <div class="fw-black fs-5 mb-1">
-        🎯 {{ t.catalog_bundle_title if t is defined else 'Paquete completo' }}
-        — {{ module_count }} {{ 'módulos' if lang == 'es' else 'modules' }}
+      <div class="bundle-card__label">{{ '🎯 Paquete completo' if lang == 'es' else '🎯 Full bundle' }}</div>
+      <div class="bundle-card__title">
+        {{ module_count }} {{ 'módulos incluidos' if lang == 'es' else 'modules included' }}
       </div>
-      <div style="opacity:.9;font-size:.95rem;">
+      <div class="bundle-card__desc">
         {{ t.catalog_bundle_desc if t is defined else 'Accedé a todo PressAndLive por un único precio mensual' }}
       </div>
-      <div class="mt-2" style="font-size:.85rem;background:rgba(0,0,0,.15);
-                               display:inline-block;padding:3px 12px;border-radius:20px;">
-        💰 {{ 'Ahorrás' if lang == 'es' else 'Save' }}
-        ${{ bundle_savings }}
+      <div class="bundle-card__saving">
+        💰 {{ 'Ahorrás' if lang == 'es' else 'Save' }} ${{ bundle_savings }}
         {{ 'vs. contratar por separado' if lang == 'es' else 'vs. individual pricing' }}
       </div>
     </div>
     <div class="text-center">
-      <div class="fw-black" style="font-size:2.4rem;line-height:1;">${{ bundle_price // 100 }}</div>
-      <div style="font-size:.8rem;opacity:.85;">{{ t.catalog_per_month if t is defined else '/mes' }}</div>
+      <div class="bundle-card__price">${{ bundle_price // 100 }}</div>
+      <div class="bundle-card__period">{{ t.catalog_per_month if t is defined else '/mes' }}</div>
       {% set local_bundle = convert_to_local(bundle_price, prof_currency) %}
       {% if local_bundle %}
-      <div style="font-size:.78rem; opacity:.8; margin-top:2px;">{{ local_bundle }}</div>
+      <div class="bundle-card__local">{{ local_bundle }}</div>
       {% endif %}
-      <button class="btn btn-sm mt-2 fw-bold"
-              style="background:#fff;color:#F97316;border:none;"
-              onclick="selectBundle()">
+      <button class="bundle-card__btn" onclick="selectBundle()">
         {{ t.catalog_bundle_cta if t is defined else 'Elegir paquete completo' }}
       </button>
     </div>
@@ -106,76 +88,70 @@
 </div>
 
 <!-- ── 6 módulos en grilla ───────────────────────────────────────────────────── -->
+<span class="section-label-sm">{{ '📦 Módulos disponibles' if lang == 'es' else '📦 Available modules' }}</span>
 <div class="row g-3">
   {% for mod in modules %}
   <div class="col-12 col-md-6 col-lg-4">
-    <div class="card border shadow-sm h-100" id="card-{{ mod.id }}">
-      <div class="card-body d-flex flex-column p-4">
+    <div class="module-card h-100" id="card-{{ mod.id }}">
 
-        <!-- Ícono + precio -->
-        <div class="d-flex align-items-start justify-content-between mb-3">
-          <div class="fs-1 lh-1">{{ mod.icon }}</div>
-          <div class="text-end">
-            <div class="fw-black fs-4 text-pal lh-1">${{ (mod.price_cents // 100) }}</div>
-            <div class="text-muted" style="font-size:.75rem;">
-              {{ t.catalog_per_month if t is defined else '/mes' }}
-            </div>
-            {% set local_price = convert_to_local(mod.price_cents, prof_currency) %}
-            {% if local_price %}
-            <div style="font-size:.7rem; color:#6b7280; margin-top:2px;">{{ local_price }}</div>
-            {% endif %}
-          </div>
-        </div>
-
-        <!-- Nombre -->
-        <div class="fw-black fs-6 mb-2">
-          {% if lang == 'en' %}{{ mod.name_en }}{% else %}{{ mod.name_es }}{% endif %}
-        </div>
-
-        <!-- Descripción -->
-        <div class="text-muted small mb-3" style="line-height:1.5;">
-          {% if lang == 'en' %}{{ mod.desc_en }}{% else %}{{ mod.desc_es }}{% endif %}
-        </div>
-
-        <!-- Funcionalidades incluidas -->
-        {% if mod._features %}
-        <div class="mb-3">
-          <div class="text-uppercase fw-bold small text-muted mb-2" style="letter-spacing:.4px;font-size:.7rem;">
-            {% if lang == 'en' %}Includes:{% else %}Incluye:{% endif %}
-          </div>
-          <ul class="list-unstyled mb-0" style="font-size:.82rem;">
-            {% for f in mod._features %}
-            <li class="mb-1" style="color:#374151;">{{ f }}</li>
-            {% endfor %}
-          </ul>
-        </div>
-        {% endif %}
-
-        <!-- Advertencia WhatsApp Business (solo para módulos que lo requieren) -->
-        {% if mod.slug in ['agenda-inteligente', 'atencion-247'] %}
-        <div class="mb-3 p-2 rounded-2" style="background:#fffbeb; border:1px solid #fcd34d; font-size:.78rem; color:#92400e; line-height:1.4;">
-          {{ t.wa_warning if t is defined else '⚠️ Requisito: Necesitás tener WhatsApp Business instalado en tu teléfono. Es gratuito y podés usar tu mismo número.' }}
-        </div>
-        {% endif %}
-
-        <!-- Botón -->
-        <div class="mt-auto">
-          {% if mod.id in active_ids %}
-            <div class="btn btn-sm w-100 fw-semibold"
-                 style="background:#dcfce7;color:#166534;border:1.5px solid #86efac;cursor:default;">
-              ✅ {% if lang == 'en' %}Active{% else %}Activo{% endif %}
-            </div>
-          {% else %}
-            <button class="btn btn-pal btn-sm w-100 fw-semibold"
-                    id="btn-{{ mod.id }}"
-                    data-id="{{ mod.id }}"
-                    onclick="toggleModule({{ mod.id }})">
-              {{ t.catalog_add if t is defined else 'Agregar' }}
-            </button>
+      <!-- Cabecera: ícono + precio -->
+      <div class="module-card__header">
+        <div class="module-card__icon">{{ mod.icon }}</div>
+        <div class="text-end">
+          <div class="module-card__price">${{ (mod.price_cents // 100) }}</div>
+          <div class="module-card__period">{{ t.catalog_per_month if t is defined else '/mes' }}</div>
+          {% set local_price = convert_to_local(mod.price_cents, prof_currency) %}
+          {% if local_price %}
+          <div class="module-card__local">{{ local_price }}</div>
           {% endif %}
         </div>
-
       </div>
+
+      <!-- Nombre + descripción -->
+      <div class="module-card__name">
+        {% if lang == 'en' %}{{ mod.name_en }}{% else %}{{ mod.name_es }}{% endif %}
+      </div>
+      <div class="module-card__desc">
+        {% if lang == 'en' %}{{ mod.desc_en }}{% else %}{{ mod.desc_es }}{% endif %}
+      </div>
+
+      <!-- Funcionalidades incluidas -->
+      {% if mod._features %}
+      <div class="module-card__features">
+        <div class="module-card__features-title">
+          {% if lang == 'en' %}Includes:{% else %}Incluye:{% endif %}
+        </div>
+        {% for f in mod._features %}
+        <div class="module-card__feature-item">
+          <span class="module-card__feature-dot"></span>{{ f }}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- Advertencia WhatsApp -->
+      {% if mod.slug in ['agenda-inteligente', 'atencion-247'] %}
+      <div class="module-card__warning">
+        {{ t.wa_warning if t is defined else '⚠️ Requisito: Necesitás tener WhatsApp Business instalado en tu teléfono. Es gratuito y podés usar tu mismo número.' }}
+      </div>
+      {% endif %}
+
+      <!-- Botón -->
+      <div class="mt-auto pt-3">
+        {% if mod.id in active_ids %}
+          <div class="module-card__active">
+            ✅ {% if lang == 'en' %}Active{% else %}Activo{% endif %}
+          </div>
+        {% else %}
+          <button class="btn btn-pal btn-sm w-100 fw-semibold"
+                  id="btn-{{ mod.id }}"
+                  data-id="{{ mod.id }}"
+                  onclick="toggleModule({{ mod.id }})">
+            {{ t.catalog_add if t is defined else 'Agregar' }}
+          </button>
+        {% endif %}
+      </div>
+
     </div>
   </div>
   {% endfor %}
@@ -234,11 +210,11 @@ function updateUI() {
     if (isInCart(mod.id)) {
       btn.textContent = TXT_REMOVE;
       btn.classList.replace('btn-pal', 'btn-outline-secondary');
-      card.style.borderColor = '#F97316';
+      card.classList.add('module-card--selected');
     } else {
       btn.textContent = TXT_ADD;
       btn.classList.replace('btn-outline-secondary', 'btn-pal');
-      card.style.borderColor = '';
+      card.classList.remove('module-card--selected');
     }
   });
 }

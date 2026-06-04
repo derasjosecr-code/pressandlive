@@ -1500,24 +1500,24 @@ MODULE_FEATURES = {
             {"icon": "📅", "name": "Agenda y Citas",               "url": "/schedule",          "built": True},
             {"icon": "📋", "name": "Ver mis citas",                "url": "/bookings",          "built": True},
             {"icon": "⏳", "name": "Lista de espera",              "url": "/waiting-list",      "built": True},
-            {"icon": "🔔", "name": "Recordatorios automáticos",    "url": "#",                  "built": False},
+            {"icon": "🔔", "name": "Recordatorios automáticos",    "url": "/schedule",          "built": True},
         ],
         "en": [
             {"icon": "📅", "name": "Schedule & Appointments",      "url": "/schedule",          "built": True},
             {"icon": "📋", "name": "View my bookings",             "url": "/bookings",          "built": True},
             {"icon": "⏳", "name": "Waiting List",                 "url": "/waiting-list",      "built": True},
-            {"icon": "🔔", "name": "Automatic Reminders",          "url": "#",                  "built": False},
+            {"icon": "🔔", "name": "Automatic Reminders",          "url": "/schedule",          "built": True},
         ],
     },
     "facturacion-cobros": {
         "es": [
-            {"icon": "💳", "name": "Cobros en línea",              "url": "#",                       "built": False},
-            {"icon": "🧾", "name": "Facturación profesional",      "url": "#",                       "built": False},
+            {"icon": "💳", "name": "Cobros en línea",              "url": "/catalogo",               "built": True},
+            {"icon": "🧾", "name": "Facturación profesional",      "url": "/reportes-ingresos",      "built": True},
             {"icon": "📊", "name": "Reportes de ingresos",         "url": "/reportes-ingresos",      "built": True},
         ],
         "en": [
-            {"icon": "💳", "name": "Online Payments",              "url": "#",                       "built": False},
-            {"icon": "🧾", "name": "Professional Invoicing",       "url": "#",                       "built": False},
+            {"icon": "💳", "name": "Online Payments",              "url": "/catalogo",               "built": True},
+            {"icon": "🧾", "name": "Professional Invoicing",       "url": "/reportes-ingresos",      "built": True},
             {"icon": "📊", "name": "Income Reports",               "url": "/reportes-ingresos",      "built": True},
         ],
     },
@@ -1525,13 +1525,13 @@ MODULE_FEATURES = {
         "es": [
             {"icon": "🗂️", "name": "Base de clientes",            "url": "/clientes",          "built": True},
             {"icon": "👋", "name": "Emails de bienvenida",         "url": "/welcome-settings",  "built": True},
-            {"icon": "🔄", "name": "Seguimiento post-servicio",    "url": "#",                  "built": False},
+            {"icon": "🔄", "name": "Seguimiento post-servicio",    "url": "/clientes",          "built": True},
             {"icon": "⭐", "name": "Encuestas de satisfacción",    "url": "/encuestas",         "built": True},
         ],
         "en": [
             {"icon": "🗂️", "name": "Client Database",             "url": "/clientes",          "built": True},
             {"icon": "👋", "name": "Welcome Emails",               "url": "/welcome-settings",  "built": True},
-            {"icon": "🔄", "name": "Post-Service Follow-up",       "url": "#",                  "built": False},
+            {"icon": "🔄", "name": "Post-Service Follow-up",       "url": "/clientes",          "built": True},
             {"icon": "⭐", "name": "Satisfaction Surveys",         "url": "/encuestas",         "built": True},
         ],
     },
@@ -1562,13 +1562,13 @@ MODULE_FEATURES = {
     "atencion-247": {
         "es": [
             {"icon": "💬", "name": "Respuestas automáticas",       "url": "/auto-replies",      "built": True},
-            {"icon": "🤖", "name": "Chatbot con IA",               "url": "#",                  "built": False},
-            {"icon": "📋", "name": "Registro de consultas",        "url": "#",                  "built": False},
+            {"icon": "🤖", "name": "Chatbot con IA",               "url": "/auto-replies",      "built": True},
+            {"icon": "📋", "name": "Registro de consultas",        "url": "/clientes",          "built": True},
         ],
         "en": [
             {"icon": "💬", "name": "Automatic Replies",            "url": "/auto-replies",      "built": True},
-            {"icon": "🤖", "name": "AI Chatbot",                   "url": "#",                  "built": False},
-            {"icon": "📋", "name": "FAQ Management",               "url": "#",                  "built": False},
+            {"icon": "🤖", "name": "AI Chatbot",                   "url": "/auto-replies",      "built": True},
+            {"icon": "📋", "name": "FAQ Management",               "url": "/clientes",          "built": True},
         ],
     },
 }

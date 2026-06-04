@@ -213,56 +213,65 @@
     <div class="col-12 col-sm-6 col-lg-4 prof-item"
          data-search="{{ p.name|lower }} {{ (p.specialty or '')|lower }} {{ (p.city or '')|lower }} {{ (p.country or '')|lower }}">
 
-      <a href="/profesional/{{ p.slug }}" class="prof-card p-4">
+      <a href="/profesional/{{ p.slug }}" class="prof-card">
 
-        <!-- Cabecera -->
-        <div class="d-flex align-items-center gap-3 mb-3">
-          {% if p.avatar_url %}
-          <img src="{{ p.avatar_url }}" alt="{{ p.name }}"
-               class="prof-avatar-lg"
-               style="object-fit:cover;"
-               onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-          <div class="prof-avatar-lg" style="display:none;">{{ p.name[0] }}</div>
+        <!-- Cover strip -->
+        {% set ci = (p.slug | length) % 6 %}
+        <div style="height:72px; border-radius:12px 12px 0 0; position:relative; overflow:hidden; flex-shrink:0;">
+          {% if ci == 0 %}
+          <div style="position:absolute;inset:0;background:linear-gradient(135deg,#F97316,#C2410C);"></div>
+          {% elif ci == 1 %}
+          <div style="position:absolute;inset:0;background:linear-gradient(135deg,#3B82F6,#1D4ED8);"></div>
+          {% elif ci == 2 %}
+          <div style="position:absolute;inset:0;background:linear-gradient(135deg,#0EA5E9,#0369A1);"></div>
+          {% elif ci == 3 %}
+          <div style="position:absolute;inset:0;background:linear-gradient(135deg,#8B5CF6,#6D28D9);"></div>
+          {% elif ci == 4 %}
+          <div style="position:absolute;inset:0;background:linear-gradient(135deg,#10B981,#047857);"></div>
           {% else %}
-          <div class="prof-avatar-lg">{{ p.name[0] }}</div>
+          <div style="position:absolute;inset:0;background:linear-gradient(135deg,#F59E0B,#B45309);"></div>
           {% endif %}
-          <div class="flex-grow-1 min-w-0">
-            <div class="fw-black" style="font-size:.98rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-              {{ p.name }}
-            </div>
-            {% if p.specialty %}
-            <div class="text-muted small" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-              {{ p.specialty }}
-            </div>
+          <div style="position:absolute;inset:0;opacity:.1;background-image:url('data:image/svg+xml,%3Csvg width=\'40\' height=\'40\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Ccircle cx=\'20\' cy=\'20\' r=\'14\' fill=\'none\' stroke=\'white\' stroke-width=\'1\'/%3E%3C/svg%3E');background-repeat:repeat;"></div>
+          <!-- Avatar sobre el cover -->
+          <div style="position:absolute;bottom:-22px;left:16px;">
+            {% if p.avatar_url %}
+            <img src="{{ p.avatar_url }}" alt="{{ p.name }}"
+                 style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.12);"
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+            <div style="display:none;width:48px;height:48px;border-radius:50%;background:var(--pal-orange);color:#fff;font-size:18px;font-weight:900;align-items:center;justify-content:center;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.12);">{{ p.name[0] }}</div>
+            {% else %}
+            <div style="width:48px;height:48px;border-radius:50%;background:var(--pal-orange);color:#fff;font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.12);">{{ p.name[0] }}</div>
             {% endif %}
           </div>
         </div>
 
-        <!-- Ubicación con bandera -->
-        {% if p.country %}
-        <div class="text-muted small mb-2">
-          {% set flag = get_country_flag(p.country) %}
-          {{ flag }} {{ p.country }}{% if p.city %} · {{ p.city }}{% endif %}
-        </div>
-        {% elif p.city %}
-        <div class="text-muted small mb-2">📍 {{ p.city }}</div>
-        {% endif %}
+        <!-- Contenido de la tarjeta -->
+        <div class="p-4" style="padding-top:32px !important;">
+          <div class="fw-black mb-1" style="font-size:.98rem;">{{ p.name }}</div>
+          {% if p.specialty %}
+          <div class="text-muted small mb-2" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ p.specialty }}</div>
+          {% endif %}
 
-        <!-- Badge agenda online -->
-        {% if p.id in agenda_ids %}
-        <div class="mb-3">
-          <span class="badge rounded-pill"
-                style="background:#dcfce7; color:#166534; font-size:.72rem; font-weight:600; padding:4px 10px;">
-            📅 {{ t.explore_badge_online if t is defined else 'Acepta citas online' }}
-          </span>
-        </div>
-        {% endif %}
+          {% if p.country %}
+          <div class="text-muted small mb-2">
+            {% set flag = get_country_flag(p.country) %}
+            {{ flag }} {{ p.country }}{% if p.city %} · {{ p.city }}{% endif %}
+          </div>
+          {% elif p.city %}
+          <div class="text-muted small mb-2">📍 {{ p.city }}</div>
+          {% endif %}
 
-        <!-- CTA -->
-        <div class="mt-auto pt-2">
-          <span class="fw-semibold small text-pal">
-            {{ t.explore_btn_profile if t is defined else 'Ver perfil →' }}
-          </span>
+          {% if p.id in agenda_ids %}
+          <div class="mb-2">
+            <span style="background:#dcfce7;color:#166534;border:1px solid #bbf7d0;border-radius:20px;font-size:.7rem;font-weight:700;padding:3px 9px;">
+              📅 {{ t.explore_badge_online if t is defined else 'Acepta citas online' }}
+            </span>
+          </div>
+          {% endif %}
+
+          <div class="mt-auto pt-2">
+            <span class="fw-semibold small text-pal">{{ t.explore_btn_profile if t is defined else 'Ver perfil →' }}</span>
+          </div>
         </div>
 
       </a>
