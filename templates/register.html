@@ -2,171 +2,148 @@
 <html lang="{{ lang | default('es') }}">
 <head>
   <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PressAndLive — {{ t.register_title if t is defined else 'Registro' }}</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet" />
+  <title>PressAndLive — {{ t.register_title if t is defined else 'Crear cuenta' }}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/style.css" />
+  <link rel="stylesheet" href="/static/style.css?v=2" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; padding: 0; }
+    .split-wrap { display: flex; min-height: 100vh; }
+    .split-left { width: 42%; background: #1a1a1a; padding: 48px 52px; display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden; }
+    .split-left-pattern { position: absolute; inset: 0; pointer-events: none; opacity: .04; background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='30' cy='30' r='22' fill='none' stroke='white' stroke-width='1.5'/%3E%3C/svg%3E"); background-repeat: repeat; }
+    .split-left-content { position: relative; z-index: 1; }
+    .split-tagline { font-size: clamp(1.6rem, 2.8vw, 2.2rem); font-weight: 900; color: #fff; line-height: 1.2; letter-spacing: -.03em; margin-bottom: 14px; }
+    .split-tagline span { color: #f97316; }
+    .split-sub { font-size: .92rem; color: rgba(255,255,255,.55); line-height: 1.7; margin-bottom: 36px; }
+    .feature-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; }
+    .feature-list li { display: flex; align-items: flex-start; gap: 10px; color: rgba(255,255,255,.75); font-size: .88rem; line-height: 1.5; }
+    .feature-dot { width: 20px; height: 20px; border-radius: 50%; background: #f97316; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: .65rem; margin-top: 1px; }
+    .split-footer-text { font-size: .75rem; color: rgba(255,255,255,.28); position: relative; z-index: 1; }
+    .split-footer-text a { color: #f97316; text-decoration: none; }
+    .split-right { width: 58%; background: #fff; padding: 40px 48px; display: flex; flex-direction: column; justify-content: flex-start; overflow-y: auto; }
+    .lang-row { display: flex; justify-content: flex-end; gap: 6px; margin-bottom: 28px; }
+    .reg-heading { font-size: 1.5rem; font-weight: 900; color: #1a1a1a; margin-bottom: 4px; letter-spacing: -.02em; }
+    .reg-sub { font-size: .88rem; color: #6b7280; margin-bottom: 24px; }
+    .form-label-reg { font-size: .8rem; font-weight: 600; color: #374151; margin-bottom: 5px; display: block; }
+    .form-control-reg { width: 100%; padding: 10px 13px; border: 1.5px solid #e5e7eb; border-radius: 8px; font-size: .9rem; color: #1a1a1a; outline: none; transition: border-color .15s; font-family: 'Inter', sans-serif; }
+    .form-control-reg:focus { border-color: #f97316; }
+    .form-hint { font-size: .75rem; color: #9ca3af; margin-top: 4px; }
+    .btn-register { width: 100%; padding: 13px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff; font-size: .95rem; font-weight: 700; border: none; border-radius: 8px; cursor: pointer; transition: opacity .15s; font-family: 'Inter', sans-serif; margin-top: 4px; }
+    .btn-register:hover { opacity: .92; }
+    .login-link { text-align: center; font-size: .85rem; color: #6b7280; margin-top: 16px; }
+    .login-link a { color: #f97316; font-weight: 700; text-decoration: none; }
+    @media (max-width: 768px) { .split-wrap { flex-direction: column; } .split-left { display: none; } .split-right { width: 100%; padding: 28px 20px; } }
+  </style>
 </head>
 <body>
+<div class="split-wrap">
 
-<!-- Barra de idioma (pública) -->
-<div class="d-flex justify-content-end px-3 pt-2 pb-1">
-  <div class="d-flex gap-1">
-    <form method="post" action="/set-lang/es" class="m-0">
-      <button type="submit"
-        class="btn btn-sm {% if lang == 'es' %}btn-pal{% else %}btn-outline-secondary{% endif %} px-2 py-1"
-        style="font-size:.75rem;">🇪🇸 ES</button>
-    </form>
-    <form method="post" action="/set-lang/en" class="m-0">
-      <button type="submit"
-        class="btn btn-sm {% if lang == 'en' %}btn-pal{% else %}btn-outline-secondary{% endif %} px-2 py-1"
-        style="font-size:.75rem;">🇬🇧 EN</button>
-    </form>
-  </div>
-</div>
-
-<div class="auth-wrap">
-  <div class="card shadow-sm border-0 w-100" style="max-width:440px; border-radius:18px!important;">
-    <div class="card-body p-4 p-md-5">
-
-      <!-- Logo -->
-      <div class="text-center mb-4">
-        <div style="display:inline-flex;align-items:center;gap:10px;">
-          <div style="width:36px;height:36px;position:relative;display:inline-block;">
-            <div style="position:absolute;bottom:0;left:0;width:36px;height:33px;background:#c05000;border-radius:8px;"></div>
-            <div style="position:absolute;top:0;left:0;width:36px;height:31px;background:#f97316;border-radius:8px;display:flex;align-items:center;justify-content:center;">
-              <div style="width:9px;height:9px;background:#fff;border-radius:50%;opacity:.9;"></div>
-            </div>
+  <div class="split-left">
+    <div class="split-left-pattern"></div>
+    <div class="split-left-content">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:48px;">
+        <div style="position:relative;width:32px;height:32px;">
+          <div style="position:absolute;bottom:0;left:0;width:32px;height:29px;background:#c05000;border-radius:7px;"></div>
+          <div style="position:absolute;top:0;left:0;width:32px;height:28px;background:#f97316;border-radius:7px;display:flex;align-items:center;justify-content:center;">
+            <div style="width:8px;height:8px;background:#fff;border-radius:50%;opacity:.9;"></div>
           </div>
-          <span class="brand-text" style="font-size:1.2rem;">Press<span>&amp; Live</span></span>
+        </div>
+        <span style="font-size:1.15rem;font-weight:900;color:#fff;">Press<span style="color:#f97316;font-weight:300;">&amp; Live</span></span>
+      </div>
+      <div class="split-tagline">{{ 'Tu negocio en' if lang == 'es' else 'Your business' }}<br><span>{{ 'piloto automático.' if lang == 'es' else 'on autopilot.' }}</span></div>
+      <div class="split-sub">{{ 'Creá tu cuenta y empezá a gestionar citas, cobros y clientes desde un solo lugar.' if lang == 'es' else 'Create your account and start managing appointments, payments and clients in one place.' }}</div>
+      <ul class="feature-list">
+        <li><div class="feature-dot">✓</div><span>{{ 'Agenda online lista en minutos' if lang == 'es' else 'Online booking ready in minutes' }}</span></li>
+        <li><div class="feature-dot">✓</div><span>{{ 'Recordatorios automáticos por email' if lang == 'es' else 'Automatic email reminders' }}</span></li>
+        <li><div class="feature-dot">✓</div><span>{{ 'Página de perfil pública y compartible' if lang == 'es' else 'Public profile page you can share' }}</span></li>
+        <li><div class="feature-dot">✓</div><span>{{ '6 módulos para crecer sin límites' if lang == 'es' else '6 modules to grow without limits' }}</span></li>
+      </ul>
+    </div>
+    <div class="split-footer-text">© 2026 PressAndLive · <a href="/explorar">{{ 'Ver profesionales' if lang == 'es' else 'Browse professionals' }}</a></div>
+  </div>
+
+  <div class="split-right">
+    <div class="lang-row">
+      <form method="post" action="/set-lang/es" class="m-0"><button type="submit" class="btn btn-sm {% if lang == 'es' %}btn-pal{% else %}btn-outline-secondary{% endif %} px-2 py-1" style="font-size:.75rem;">🇪🇸 ES</button></form>
+      <form method="post" action="/set-lang/en" class="m-0"><button type="submit" class="btn btn-sm {% if lang == 'en' %}btn-pal{% else %}btn-outline-secondary{% endif %} px-2 py-1" style="font-size:.75rem;">🇬🇧 EN</button></form>
+    </div>
+
+    <div class="reg-heading">{{ t.register_title if t is defined else 'Creá tu cuenta' }}</div>
+    <div class="reg-sub">{{ t.register_subtitle if t is defined else 'Tu agenda profesional en menos de 2 minutos' }}</div>
+
+    {% if error %}<div class="alert alert-danger py-2 small mb-3">{{ error }}</div>{% endif %}
+
+    <form method="post" action="/register">
+      <input type="hidden" name="csrf" value="{{ csrf_token(request) }}" />
+
+      <div class="row g-3 mb-3">
+        <div class="col-12">
+          <label class="form-label-reg">{{ t.register_name if t is defined else 'Nombre completo' }}</label>
+          <input type="text" name="name" class="form-control-reg" placeholder="Ej: Dra. Ana García" required />
+          <div class="form-hint">{{ t.register_name_hint if t is defined else 'Así aparecerá en tu página de agenda' }}</div>
         </div>
       </div>
 
-      <h1 class="fs-4 fw-bold text-center mb-1">
-        {{ t.register_title if t is defined else 'Creá tu cuenta' }}
-      </h1>
-      <p class="text-muted text-center small mb-4">
-        {{ t.register_subtitle if t is defined else 'Tu agenda profesional en menos de 2 minutos' }}
-      </p>
-
-      {% if error %}
-        <div class="alert alert-danger py-2 small">{{ error }}</div>
-      {% endif %}
-
-      <form method="post" action="/register">
-        <input type="hidden" name="csrf" value="{{ csrf_token(request) }}" />
-        <div class="mb-3">
-          <label class="form-label fw-semibold small">
-            {{ t.register_name if t is defined else 'Nombre completo' }}
-          </label>
-          <input type="text" name="name" class="form-control"
-                 placeholder="Ej: Dra. Ana García" required />
-          <div class="form-text">
-            {{ t.register_name_hint if t is defined else 'Así aparecerá en tu página de agenda' }}
-          </div>
+      <div class="row g-3 mb-3">
+        <div class="col-12">
+          <label class="form-label-reg">{{ t.register_specialty if t is defined else 'Profesión o especialidad' }}</label>
+          <input type="text" name="specialty" class="form-control-reg" placeholder="{{ t.register_specialty_placeholder if t is defined else 'Ej: Psicóloga, Nutricionista, Coach…' }}" />
         </div>
-        <div class="mb-3">
-          <label class="form-label fw-semibold small">
-            {{ t.register_specialty if t is defined else 'Profesión o especialidad' }}
-          </label>
-          <input type="text" name="specialty" class="form-control"
-                 placeholder="{{ t.register_specialty_placeholder if t is defined else 'Ej: Psicóloga, Nutricionista, Coach…' }}" />
-        </div>
-        <!-- País -->
-        <div class="mb-3">
-          <label class="form-label fw-semibold small">
-            {{ t.register_country if t is defined else 'País' }} *
-          </label>
-          <select name="country" class="form-select" id="sel-country" required onchange="syncCurrency(this)">
-            <option value="" disabled selected>
-              {{ t.register_country_hint if t is defined else '— Seleccioná tu país —' }}
-            </option>
-            {% if countries is defined %}
-              {% for c in countries %}
-              <option value="{{ c.name }}" data-currency="{{ c.currency }}">
-                {{ c.flag }} {{ c.name }}
-              </option>
-              {% endfor %}
-            {% endif %}
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-sm-6">
+          <label class="form-label-reg">{{ t.register_country if t is defined else 'País' }} *</label>
+          <select name="country" class="form-control-reg" id="sel-country" required onchange="syncCurrency(this)" style="appearance:auto;">
+            <option value="" disabled selected>{{ t.register_country_hint if t is defined else '— Seleccioná —' }}</option>
+            {% if countries is defined %}{% for c in countries %}<option value="{{ c.name }}" data-currency="{{ c.currency }}">{{ c.flag }} {{ c.name }}</option>{% endfor %}{% endif %}
           </select>
         </div>
+        <div class="col-sm-6">
+          <label class="form-label-reg">{{ t.register_city if t is defined else 'Ciudad (opcional)' }}</label>
+          <input type="text" name="city" class="form-control-reg" placeholder="{{ t.register_city_hint if t is defined else 'Ej: San José…' }}" />
+        </div>
+      </div>
 
-        <!-- Ciudad (opcional) -->
-        <div class="mb-3">
-          <label class="form-label fw-semibold small">
-            {{ t.register_city if t is defined else 'Ciudad (opcional)' }}
-          </label>
-          <input type="text" name="city" class="form-control"
-                 placeholder="{{ t.register_city_hint if t is defined else 'Ej: San José, Medellín, Ciudad de México…' }}" />
-        </div>
+      <div class="mb-3">
+        <label class="form-label-reg">{{ t.register_currency if t is defined else 'Moneda' }}</label>
+        <select name="currency" class="form-control-reg" id="sel-currency" style="appearance:auto;">
+          {% if currencies is defined %}{% for code, info in currencies.items() %}<option value="{{ code }}" {% if code == 'USD' %}selected{% endif %}>{{ info.flag }} {{ info.name }} ({{ code }})</option>{% endfor %}
+          {% else %}<option value="USD" selected>🇺🇸 USD</option>{% endif %}
+        </select>
+        <div class="form-hint">{{ t.register_currency_hint if t is defined else 'Se autocompleta según el país.' }}</div>
+      </div>
 
-        <!-- Moneda (se autocompleta al elegir país) -->
-        <div class="mb-3">
-          <label class="form-label fw-semibold small">
-            {{ t.register_currency if t is defined else 'Moneda de tu país' }}
-          </label>
-          <select name="currency" class="form-select" id="sel-currency">
-            {% if currencies is defined %}
-              {% for code, info in currencies.items() %}
-              <option value="{{ code }}" {% if code == 'USD' %}selected{% endif %}>
-                {{ info.flag }} {{ info.name }} ({{ code }})
-              </option>
-              {% endfor %}
-            {% else %}
-              <option value="USD" selected>🇺🇸 Estados Unidos / United States (USD)</option>
-            {% endif %}
-          </select>
-          <div class="form-text">
-            {{ t.register_currency_hint if t is defined else 'La moneda se autocompleta según el país. Podés cambiarla si lo necesitás.' }}
-          </div>
-        </div>
-        <div class="mb-3">
-          <label class="form-label fw-semibold small">
-            {{ t.register_email if t is defined else 'Correo electrónico' }}
-          </label>
-          <input type="email" name="email" class="form-control"
-                 placeholder="tu@correo.com" required />
-        </div>
-        <div class="mb-4">
-          <label class="form-label fw-semibold small">
-            {{ t.register_password if t is defined else 'Contraseña' }}
-          </label>
-          <input type="password" name="password" class="form-control"
-                 placeholder="••••••••" minlength="8" required />
-          <div class="form-text">
-            {{ t.register_password_hint if t is defined else 'Mínimo 8 caracteres' }}
-          </div>
-        </div>
-        <div class="d-grid">
-          <button type="submit" class="btn btn-pal btn-lg">
-            {{ t.register_button if t is defined else 'Crear mi cuenta' }}
-          </button>
-        </div>
-      </form>
+      <div class="mb-3">
+        <label class="form-label-reg">{{ t.register_email if t is defined else 'Correo electrónico' }}</label>
+        <input type="email" name="email" class="form-control-reg" placeholder="tu@correo.com" required />
+      </div>
 
-      <hr class="my-4" />
-      <p class="text-center small text-muted mb-0">
-        {{ t.register_has_account if t is defined else '¿Ya tenés cuenta?' }}
-        <a href="/" class="text-pal fw-semibold text-decoration-none">
-          {{ t.register_login if t is defined else 'Iniciá sesión' }}
-        </a>
-      </p>
+      <div class="mb-4">
+        <label class="form-label-reg">{{ t.register_password if t is defined else 'Contraseña' }}</label>
+        <input type="password" name="password" class="form-control-reg" placeholder="••••••••" minlength="8" required />
+        <div class="form-hint">{{ t.register_password_hint if t is defined else 'Mínimo 8 caracteres' }}</div>
+      </div>
 
+      <button type="submit" class="btn-register">{{ t.register_button if t is defined else 'Crear mi cuenta gratis' }}</button>
+    </form>
+
+    <div class="login-link">
+      {{ t.register_has_account if t is defined else '¿Ya tenés cuenta?' }}
+      <a href="/">{{ t.register_login if t is defined else 'Iniciá sesión' }}</a>
     </div>
   </div>
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-// Al elegir país, autocompleta la moneda correspondiente
 function syncCurrency(sel) {
   const currency = sel.options[sel.selectedIndex].dataset.currency;
   if (!currency) return;
   const currSel = document.getElementById('sel-currency');
   for (let i = 0; i < currSel.options.length; i++) {
-    if (currSel.options[i].value === currency) {
-      currSel.selectedIndex = i;
-      break;
-    }
+    if (currSel.options[i].value === currency) { currSel.selectedIndex = i; break; }
   }
 }
 </script>

@@ -3,246 +3,196 @@
 <head>
   <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{{ t.book_page_title if t is defined else 'Reservar cita' }} — {{ prof.name }}</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet" />
+  <meta name="description" content="{{ 'Reservá una cita con' if lang == 'es' else 'Book an appointment with' }} {{ prof.name }}{% if prof.specialty %}, {{ prof.specialty }}{% endif %}" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="PressAndLive" />
+  <meta property="og:title" content="{{ 'Reservar cita con' if lang == 'es' else 'Book with' }} {{ prof.name }}" />
+  <meta property="og:description" content="{% if prof.specialty %}{{ prof.specialty }} · {% endif %}{{ 'Agendá tu cita online en segundos.' if lang == 'es' else 'Book your appointment online in seconds.' }}" />
+  <meta property="og:url" content="https://pressandlive.com/agenda/{{ prof.slug }}" />
+  {% if prof.avatar_url %}<meta property="og:image" content="{{ prof.avatar_url }}" />
+  {% else %}<meta property="og:image" content="https://pressandlive.com/static/og-default.png" />{% endif %}
+  <meta name="twitter:card" content="summary" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/style.css" />
+  <link rel="stylesheet" href="/static/style.css?v=2" />
   <style>
-    body { background: #f8f9fa; }
-
-    /* Cabecera profesional */
-    .prof-avatar {
-      width: 64px; height: 64px; border-radius: 50%;
-      background: var(--pal-orange);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 26px; font-weight: 900; color: #fff;
-      margin: 0 auto 14px;
-    }
-
-    /* Navegación de semana */
+    body { background: #f4f4f2; }
+    .pub-nav { background: rgba(255,255,255,0.97); border-bottom: 1px solid rgba(0,0,0,0.06); padding: 12px 0; position: sticky; top: 0; z-index: 100; }
+    .book-cover-wrap { position: relative; margin-bottom: 64px; }
+    .book-cover { height: 160px; overflow: hidden; position: relative; }
+    .book-cover-inner { position: absolute; inset: 0; }
+    .book-cover-pattern { position: absolute; inset: 0; opacity: .1; background-image: url("data:image/svg+xml,%3Csvg width='52' height='52' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='26' cy='26' r='18' fill='none' stroke='white' stroke-width='1.5'/%3E%3Ccircle cx='26' cy='26' r='6' fill='white' opacity='.5'/%3E%3C/svg%3E"); background-repeat: repeat; }
+    .book-avatar-anchor { position: absolute; bottom: -48px; left: 50%; transform: translateX(-50%); z-index: 10; }
+    .book-avatar { width: 96px; height: 96px; border-radius: 50%; background: var(--pal-orange); display: flex; align-items: center; justify-content: center; font-size: 38px; font-weight: 900; color: #fff; border: 4px solid #fff; box-shadow: 0 4px 20px rgba(0,0,0,0.14); object-fit: cover; }
+    .book-identity { background: #fff; border-bottom: 1px solid #f0ede8; padding: 16px 0 24px; text-align: center; }
+    .book-prof-name { font-size: 1.5rem; font-weight: 900; color: #1a1a1a; letter-spacing: -.02em; margin-bottom: 4px; }
+    .book-prof-specialty { font-size: .92rem; color: var(--pal-orange); font-weight: 600; margin-bottom: 6px; }
+    .book-prof-meta { font-size: .82rem; color: #6b7280; }
+    .book-content { max-width: 560px; margin: 0 auto; padding: 24px 16px 40px; }
+    .step-card { background: #fff; border-radius: 14px; border: 1px solid #f0ede8; margin-bottom: 12px; overflow: hidden; }
+    .step-card-body { padding: 22px; }
+    .step-header { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+    .step-num { width: 28px; height: 28px; border-radius: 50%; background: var(--pal-orange); color: #fff; font-size: 13px; font-weight: 900; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .step-title { font-size: .95rem; font-weight: 700; color: #1a1a1a; }
     .week-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-    .week-btn {
-      background: none; border: 1.5px solid #dee2e6; border-radius: 8px;
-      padding: 6px 14px; cursor: pointer; font-size: 18px; transition: .15s;
-    }
+    .week-btn { background: none; border: 1.5px solid #e5e7eb; border-radius: 8px; padding: 6px 14px; cursor: pointer; font-size: 18px; transition: .15s; color: #374151; }
     .week-btn:hover { border-color: var(--pal-orange); color: var(--pal-orange); }
-
-    /* Días de la semana */
+    .week-label { font-size: .88rem; font-weight: 600; color: #374151; }
     .days-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
-    .day-btn {
-      aspect-ratio: 1; border-radius: 10px; border: 1.5px solid #dee2e6;
-      background: #fff; cursor: pointer; font-size: 12px; font-weight: 600;
-      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-      transition: all .15s; color: #1a1a1a;
-    }
-    .day-btn .day-name { font-size: 10px; color: #9ca3af; text-transform: uppercase; }
+    .day-btn { aspect-ratio: 1; border-radius: 10px; border: 1.5px solid #e5e7eb; background: #fff; cursor: pointer; font-size: 12px; font-weight: 600; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; transition: all .15s; color: #1a1a1a; }
+    .day-btn .day-name { font-size: 9px; color: #9ca3af; text-transform: uppercase; letter-spacing: .04em; }
     .day-btn:hover:not(:disabled) { border-color: var(--pal-orange); background: var(--pal-orange-light); }
-    .day-btn.selected  { border-color: var(--pal-orange); background: var(--pal-orange); color: #fff; }
+    .day-btn.selected { border-color: var(--pal-orange); background: var(--pal-orange); color: #fff; }
     .day-btn.selected .day-name { color: #fed7aa; }
-    .day-btn:disabled  { opacity: .35; cursor: not-allowed; }
-
-    /* Turnos disponibles */
-    .slots-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; }
-    .slots-empty, .slots-loading { font-size: 13px; color: #9ca3af; text-align: center; padding: 20px; }
+    .day-btn:disabled { opacity: .3; cursor: not-allowed; }
+    .slots-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 8px; }
+    .slots-empty, .slots-loading { font-size: 13px; color: #9ca3af; text-align: center; padding: 24px; }
     .slots-loading { color: var(--pal-orange); }
-
-    /* Tarjeta de éxito */
-    .success-card {
-      background: #f0fdf4; border: 2px solid #bbf7d0; border-radius: 16px;
-      padding: 36px; text-align: center;
-    }
-    .success-icon  { font-size: 48px; margin-bottom: 16px; }
-    .success-title { font-size: 20px; font-weight: 900; color: #15803d; margin-bottom: 8px; }
-    .success-sub   { font-size: 14px; color: #166534; }
-
-    /* Pie de página */
-    .powered { text-align: center; font-size: 12px; color: #9ca3af; margin-top: 28px; }
+    .form-label-book { font-size: .82rem; font-weight: 600; color: #374151; margin-bottom: 6px; display: block; }
+    .ref-banner { border-radius: 12px; margin-bottom: 14px; background: #fffbeb; border: 1.5px solid #fed7aa; padding: 14px 18px; }
+    .success-card { background: #f0fdf4; border: 2px solid #bbf7d0; border-radius: 16px; padding: 36px; text-align: center; margin-bottom: 16px; }
+    .success-icon { font-size: 48px; margin-bottom: 16px; }
+    .success-title { font-size: 1.2rem; font-weight: 900; color: #15803d; margin-bottom: 8px; }
+    .success-sub { font-size: .88rem; color: #166534; }
+    .powered { text-align: center; font-size: .75rem; color: #9ca3af; margin-top: 8px; }
     .powered a { color: var(--pal-orange); text-decoration: none; font-weight: 700; }
   </style>
 </head>
 <body>
-<div class="container py-4" style="max-width:580px;">
 
-  <!-- Cabecera profesional -->
-  <div class="card border-0 shadow-sm text-center mb-3 p-4">
-    <div class="prof-avatar">{{ prof.name[0] }}</div>
-    <h1 class="fs-4 fw-black mb-1">{{ prof.name }}</h1>
-    {% if prof.specialty %}
-      <p class="text-muted small mb-0">{{ prof.specialty }}</p>
+<nav class="pub-nav">
+  <div class="container d-flex align-items-center justify-content-between">
+    <a href="/" class="d-flex align-items-center gap-2 text-decoration-none">
+      <div style="position:relative;width:28px;height:28px;display:inline-block;">
+        <div style="position:absolute;bottom:0;left:0;width:28px;height:25px;background:#c05000;border-radius:6px;"></div>
+        <div style="position:absolute;top:0;left:0;width:28px;height:24px;background:#f97316;border-radius:6px;display:flex;align-items:center;justify-content:center;">
+          <div style="width:6px;height:6px;background:#fff;border-radius:50%;opacity:.9;"></div>
+        </div>
+      </div>
+      <span class="brand-text" style="font-size:1rem;">Press<span>&amp; Live</span></span>
+    </a>
+    <div class="d-flex gap-1">
+      <form method="post" action="/set-lang/es" class="m-0"><button type="submit" class="btn btn-sm {% if lang == 'es' %}btn-pal{% else %}btn-outline-secondary{% endif %} px-2 py-1" style="font-size:.72rem;">🇪🇸 ES</button></form>
+      <form method="post" action="/set-lang/en" class="m-0"><button type="submit" class="btn btn-sm {% if lang == 'en' %}btn-pal{% else %}btn-outline-secondary{% endif %} px-2 py-1" style="font-size:.72rem;">🇬🇧 EN</button></form>
+    </div>
+  </div>
+</nav>
+
+{% set gi = (prof.slug | length) % 6 %}
+<div class="book-cover-wrap">
+  <div class="book-cover">
+    {% if gi == 0 %}<div class="book-cover-inner" style="background:linear-gradient(135deg,#F97316 0%,#C2410C 100%);"></div>
+    {% elif gi == 1 %}<div class="book-cover-inner" style="background:linear-gradient(135deg,#3B82F6 0%,#1D4ED8 100%);"></div>
+    {% elif gi == 2 %}<div class="book-cover-inner" style="background:linear-gradient(135deg,#0EA5E9 0%,#0369A1 100%);"></div>
+    {% elif gi == 3 %}<div class="book-cover-inner" style="background:linear-gradient(135deg,#8B5CF6 0%,#6D28D9 100%);"></div>
+    {% elif gi == 4 %}<div class="book-cover-inner" style="background:linear-gradient(135deg,#10B981 0%,#047857 100%);"></div>
+    {% else %}<div class="book-cover-inner" style="background:linear-gradient(135deg,#F59E0B 0%,#B45309 100%);"></div>{% endif %}
+    <div class="book-cover-pattern"></div>
+  </div>
+  <div class="book-avatar-anchor">
+    {% if prof.avatar_url %}
+    <img src="{{ prof.avatar_url }}" alt="{{ prof.name }}" class="book-avatar" onerror="this.outerHTML='<div class=\'book-avatar\'>{{ prof.name[0] }}</div>'" />
+    {% else %}
+    <div class="book-avatar">{{ prof.name[0] }}</div>
     {% endif %}
   </div>
+</div>
+
+<div class="book-identity">
+  <h1 class="book-prof-name">{{ prof.name }}</h1>
+  {% if prof.specialty %}<div class="book-prof-specialty">{{ prof.specialty }}</div>{% endif %}
+  {% if prof.country or prof.city %}
+  <div class="book-prof-meta">{% set flag = get_country_flag(prof.country) %}{{ flag }} {{ prof.country }}{% if prof.city %} · {{ prof.city }}{% endif %}</div>
+  {% endif %}
+</div>
+
+<div class="book-content">
 
   {% if not has_sched %}
-  <div class="card border-0 shadow-sm text-center p-5 text-muted">
-    ⚙️ {{ t.book_no_schedule if t is defined else 'Este profesional aún no configuró sus horarios de atención. Volvé a intentarlo más tarde.' }}
-  </div>
+  <div class="step-card"><div class="step-card-body text-center text-muted py-5">⚙️ {{ t.book_no_schedule if t is defined else 'Este profesional aún no configuró sus horarios de atención. Volvé a intentarlo más tarde.' }}</div></div>
   {% else %}
 
-  <!-- Banner de descuento por referido (aparece si hay ?ref= en la URL) -->
-  <div id="ref-banner" style="display:none; border-radius:12px; margin-bottom:12px;
-       background:linear-gradient(135deg,#fffbeb 0%,#fff7ed 100%);
-       border:1.5px solid #fed7aa; padding:14px 18px;">
+  <div id="ref-banner" style="display:none;" class="ref-banner">
     <div class="fw-bold" style="color:#9a3412; font-size:.95rem;" id="ref-banner-msg"></div>
     <div class="text-muted small mt-1" id="ref-banner-sub"></div>
   </div>
 
-  <!-- ÉXITO (oculto hasta confirmar) -->
   <div class="success-card" id="success-card" style="display:none;">
     <div class="success-icon">🎉</div>
     <div class="success-title">{{ t.book_success_title if t is defined else '¡Cita reservada!' }}</div>
     <div class="success-sub" id="success-msg"></div>
-    <!-- Etiqueta de descuento aplicado -->
-    <div id="discount-applied-label" style="display:none; margin-top:12px; font-size:.85rem;
-         font-weight:700; color:#15803d; background:#f0fdf4; border-radius:8px;
-         padding:8px 14px; display:none;">
-    </div>
-    <!-- Sección de compartir enlace de referido -->
-    <div id="ref-share-section" style="display:none; margin-top:20px; text-align:left;
-         background:#fff7ed; border:1.5px solid #fed7aa; border-radius:12px; padding:18px 20px;">
-      <div class="fw-bold mb-1" style="color:#9a3412; font-size:.92rem;" id="ref-share-title">
-        🤝 {{ t.ref_share_title if t is defined else '¡Compartí y ambos ganan!' }}
-      </div>
+    <div id="discount-applied-label" style="display:none; margin-top:12px; font-size:.85rem; font-weight:700; color:#15803d; background:#f0fdf4; border-radius:8px; padding:8px 14px;"></div>
+    <div id="ref-share-section" style="display:none; margin-top:20px; text-align:left; background:#fff7ed; border:1.5px solid #fed7aa; border-radius:12px; padding:18px 20px;">
+      <div class="fw-bold mb-1" style="color:#9a3412; font-size:.92rem;" id="ref-share-title">🤝 {{ t.ref_share_title if t is defined else '¡Compartí y ambos ganan!' }}</div>
       <div class="text-muted small mb-3" id="ref-share-sub"></div>
       <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        <input type="text" id="ref-share-input" class="form-control form-control-sm"
-               style="max-width:300px;" readonly />
-        <button class="btn btn-sm btn-pal fw-semibold" onclick="copyRefLink()">
-          <span id="copy-btn-text">{{ t.ref_share_copy if t is defined else 'Copiar' }}</span>
-        </button>
+        <input type="text" id="ref-share-input" class="form-control form-control-sm" style="max-width:300px;" readonly />
+        <button class="btn btn-sm btn-pal fw-semibold" onclick="copyRefLink()"><span id="copy-btn-text">{{ t.ref_share_copy if t is defined else 'Copiar' }}</span></button>
       </div>
-      <a id="ref-wa-btn" href="#" target="_blank" rel="noopener"
-         class="btn btn-sm fw-semibold mt-2"
-         style="background:#25D366; color:#fff; border:none; display:none;">
-        📱 {{ t.ref_share_wa if t is defined else 'Compartir por WhatsApp' }}
-      </a>
+      <a id="ref-wa-btn" href="#" target="_blank" rel="noopener" class="btn btn-sm fw-semibold mt-2" style="background:#25D366; color:#fff; border:none; display:none;">📱 {{ t.ref_share_wa if t is defined else 'Compartir por WhatsApp' }}</a>
     </div>
   </div>
 
-  <!-- PASO 1: Elegí una fecha -->
-  <div class="card border-0 shadow-sm mb-3" id="step1">
-    <div class="card-body">
-      <div class="d-flex align-items-center gap-2 fw-bold mb-3">
-        <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-black"
-             style="width:26px;height:26px;background:var(--pal-orange);font-size:13px;flex-shrink:0;">1</div>
-        {{ t.book_step1 if t is defined else 'Elegí una fecha' }}
-      </div>
+  <div class="step-card" id="step1">
+    <div class="step-card-body">
+      <div class="step-header"><div class="step-num">1</div><div class="step-title">{{ t.book_step1 if t is defined else 'Elegí una fecha' }}</div></div>
       <div class="week-nav">
         <button class="week-btn" onclick="changeWeek(-1)">‹</button>
-        <span class="fw-bold small" id="week-label"></span>
+        <span class="week-label" id="week-label"></span>
         <button class="week-btn" onclick="changeWeek(1)">›</button>
       </div>
       <div class="days-row" id="days-row"></div>
     </div>
   </div>
 
-  <!-- PASO 2: Elegí un horario -->
-  <div class="card border-0 shadow-sm mb-3" id="step2" style="display:none;">
-    <div class="card-body">
-      <div class="d-flex align-items-center gap-2 fw-bold mb-3">
-        <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-black"
-             style="width:26px;height:26px;background:var(--pal-orange);font-size:13px;flex-shrink:0;">2</div>
-        {{ t.book_step2 if t is defined else 'Elegí un horario' }}
-      </div>
-      <div id="slots-container">
-        <div class="slots-loading">{{ t.book_loading if t is defined else 'Cargando horarios…' }}</div>
-      </div>
+  <div class="step-card" id="step2" style="display:none;">
+    <div class="step-card-body">
+      <div class="step-header"><div class="step-num">2</div><div class="step-title">{{ t.book_step2 if t is defined else 'Elegí un horario' }}</div></div>
+      <div id="slots-container"><div class="slots-loading">{{ t.book_loading if t is defined else 'Cargando horarios…' }}</div></div>
     </div>
   </div>
 
-  <!-- PASO 3: Tus datos -->
-  <div class="card border-0 shadow-sm mb-3" id="step3" style="display:none;">
-    <div class="card-body">
-      <div class="d-flex align-items-center gap-2 fw-bold mb-3">
-        <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-black"
-             style="width:26px;height:26px;background:var(--pal-orange);font-size:13px;flex-shrink:0;">3</div>
-        {{ t.book_step3 if t is defined else 'Tus datos' }}
-      </div>
-
+  <div class="step-card" id="step3" style="display:none;">
+    <div class="step-card-body">
+      <div class="step-header"><div class="step-num">3</div><div class="step-title">{{ t.book_step3 if t is defined else 'Tus datos' }}</div></div>
       <div class="mb-3">
-        <label class="form-label fw-semibold small">
-          {{ t.book_name if t is defined else 'Nombre completo' }} *
-        </label>
-        <input type="text" id="c-name" class="form-control"
-               placeholder="{{ t.book_name_placeholder if t is defined else 'Tu nombre' }}" required />
+        <label class="form-label-book">{{ t.book_name if t is defined else 'Nombre completo' }} *</label>
+        <input type="text" id="c-name" class="form-control" placeholder="{{ t.book_name_placeholder if t is defined else 'Tu nombre' }}" required />
       </div>
       <div class="mb-3">
-        <label class="form-label fw-semibold small">
-          {{ t.book_email if t is defined else 'Correo electrónico' }} *
-        </label>
-        <input type="email" id="c-email" class="form-control"
-               placeholder="tu@correo.com" required />
+        <label class="form-label-book">{{ t.book_email if t is defined else 'Correo electrónico' }} *</label>
+        <input type="email" id="c-email" class="form-control" placeholder="tu@correo.com" required />
       </div>
       <div class="mb-3">
-        <label class="form-label fw-semibold small">
-          {{ t.book_phone if t is defined else 'Teléfono (opcional)' }}
-        </label>
-        <input type="tel" id="c-phone" class="form-control"
-               placeholder="+506 8888-0000" />
+        <label class="form-label-book">{{ t.book_phone if t is defined else 'Teléfono (opcional)' }}</label>
+        <input type="tel" id="c-phone" class="form-control" placeholder="+506 8888-0000" />
       </div>
       <div class="mb-4">
-        <label class="form-label fw-semibold small">
-          {{ t.book_notes if t is defined else 'Motivo de la cita (opcional)' }}
-        </label>
-        <textarea id="c-notes" class="form-control" rows="2"
-                  placeholder="{{ t.book_notes_placeholder if t is defined else 'Contanos brevemente por qué agendás…' }}"
-                  style="resize:vertical;"></textarea>
+        <label class="form-label-book">{{ t.book_notes if t is defined else 'Motivo de la cita (opcional)' }}</label>
+        <textarea id="c-notes" class="form-control" rows="2" placeholder="{{ t.book_notes_placeholder if t is defined else 'Contanos brevemente por qué agendás…' }}" style="resize:vertical;"></textarea>
       </div>
-
-      <!-- Campo de cupón de descuento -->
       <div class="mb-4">
-        <label class="form-label fw-semibold small">
-          🎟️ {{ 'Código de descuento (opcional)' if lang == 'es' else 'Discount code (optional)' }}
-        </label>
+        <label class="form-label-book">🎟️ {{ 'Código de descuento (opcional)' if lang == 'es' else 'Discount code (optional)' }}</label>
         <div class="input-group">
-          <input type="text" id="c-coupon" class="form-control text-uppercase"
-                 placeholder="{{ 'Ej: VERANO20' if lang == 'es' else 'E.g. SUMMER20' }}"
-                 style="letter-spacing:1px; font-family:monospace;"
-                 oninput="this.value=this.value.toUpperCase(); resetCoupon()" />
-          <button class="btn btn-outline-secondary fw-semibold" type="button"
-                  onclick="aplicarCupon()" id="btn-aplicar">
-            {{ 'Aplicar' if lang == 'es' else 'Apply' }}
-          </button>
+          <input type="text" id="c-coupon" class="form-control text-uppercase" placeholder="{{ 'Ej: VERANO20' if lang == 'es' else 'E.g. SUMMER20' }}" style="letter-spacing:1px; font-family:monospace;" oninput="this.value=this.value.toUpperCase(); resetCoupon()" />
+          <button class="btn btn-outline-secondary fw-semibold" type="button" onclick="aplicarCupon()" id="btn-aplicar">{{ 'Aplicar' if lang == 'es' else 'Apply' }}</button>
         </div>
-        <!-- Feedback del cupón -->
         <div id="coupon-ok" class="mt-2 small fw-semibold" style="display:none; color:#15803d;"></div>
         <div id="coupon-err" class="mt-2 small fw-semibold" style="display:none; color:#dc2626;"></div>
       </div>
-
-      <!-- Resumen del mejor descuento (aparece cuando hay cupón + referido activos) -->
-      <div id="best-discount-box" style="display:none; border-radius:10px; padding:12px 16px;
-           background:#f0fdf4; border:1.5px solid #bbf7d0; margin-bottom:16px;">
+      <div id="best-discount-box" style="display:none; border-radius:10px; padding:12px 16px; background:#f0fdf4; border:1.5px solid #bbf7d0; margin-bottom:16px;">
         <div class="fw-bold small" style="color:#15803d;" id="best-discount-label"></div>
       </div>
-
       <div id="book-error" class="alert alert-danger py-2 small" style="display:none;"></div>
-
       <div class="d-grid">
-        <button class="btn btn-pal btn-lg" onclick="confirmBooking()">
-          {{ t.book_confirm_btn if t is defined else 'Confirmar reserva' }}
-        </button>
+        <button class="btn btn-pal btn-lg fw-bold" onclick="confirmBooking()">{{ t.book_confirm_btn if t is defined else 'Confirmar reserva' }}</button>
       </div>
     </div>
   </div>
 
   {% endif %}
 
-  <!-- Selector de idioma -->
-  <div class="d-flex justify-content-center gap-1 mb-2">
-    <form method="post" action="/set-lang/es" class="m-0">
-      <button type="submit"
-        class="btn btn-sm {% if lang == 'es' %}btn-pal{% else %}btn-outline-secondary{% endif %} px-2 py-1"
-        style="font-size:.75rem;">🇪🇸 ES</button>
-    </form>
-    <form method="post" action="/set-lang/en" class="m-0">
-      <button type="submit"
-        class="btn btn-sm {% if lang == 'en' %}btn-pal{% else %}btn-outline-secondary{% endif %} px-2 py-1"
-        style="font-size:.75rem;">🇬🇧 EN</button>
-    </form>
-  </div>
-
-  <div class="powered">
-    {{ t.book_powered if t is defined else 'Reserva gestionada por' }}
-    <a href="/">PressAndLive</a>
-  </div>
+  <div class="powered">{{ t.book_powered if t is defined else 'Reserva gestionada por' }} <a href="/">PressAndLive</a></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -250,80 +200,58 @@
 const SLUG = "{{ prof.slug }}";
 const LANG = "{{ lang | default('es') }}";
 let selectedDate = null, selectedSlot = null, weekOffset = 0;
-
-// ── Referidos: detectar ?ref= en la URL ──────────────────────────────────────
-const _urlParams     = new URLSearchParams(window.location.search);
-const INCOMING_REF   = (_urlParams.get('ref') || '').trim().toUpperCase();
-let   appliedRef     = null;  // {referrer_name, referee_discount, discount_type, symbol}
-
+const _urlParams = new URLSearchParams(window.location.search);
+const INCOMING_REF = (_urlParams.get('ref') || '').trim().toUpperCase();
+let appliedRef = null;
 async function checkIncomingRef() {
   if (!INCOMING_REF) return;
-  const res  = await fetch(`/api/referral/validate?slug=${SLUG}&ref=${encodeURIComponent(INCOMING_REF)}`);
+  const res = await fetch(`/api/referral/validate?slug=${SLUG}&ref=${encodeURIComponent(INCOMING_REF)}`);
   const data = await res.json();
   if (data.valid) {
     appliedRef = data;
     const banner = document.getElementById('ref-banner');
-    const msg    = document.getElementById('ref-banner-msg');
-    const sub    = document.getElementById('ref-banner-sub');
+    const msg = document.getElementById('ref-banner-msg');
+    const sub = document.getElementById('ref-banner-sub');
     if (data.discount_type === 'percent') {
-      msg.textContent = (LANG === 'en'
-        ? `You have a ${data.referee_discount}% referral discount! 🎁`
-        : `¡Tenés un descuento de referido del ${data.referee_discount}%! 🎁`);
+      msg.textContent = LANG === 'en' ? `You have a ${data.referee_discount}% referral discount! 🎁` : `¡Tenés un descuento de referido del ${data.referee_discount}%! 🎁`;
     } else {
-      msg.textContent = (LANG === 'en'
-        ? `You have a ${data.symbol}${data.referee_discount} referral discount! 🎁`
-        : `¡Tenés un descuento de referido de ${data.symbol}${data.referee_discount}! 🎁`);
+      msg.textContent = LANG === 'en' ? `You have a ${data.symbol}${data.referee_discount} referral discount! 🎁` : `¡Tenés un descuento de referido de ${data.symbol}${data.referee_discount}! 🎁`;
     }
-    sub.textContent = (LANG === 'en'
-      ? `Invited by: ${data.referrer_name}`
-      : `Te invitó: ${data.referrer_name}`);
+    sub.textContent = LANG === 'en' ? `Invited by: ${data.referrer_name}` : `Te invitó: ${data.referrer_name}`;
     banner.style.display = 'block';
     updateBestDiscountPreview();
   }
 }
 checkIncomingRef();
-
 const DAYS_ES = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
 const DAYS_EN = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 const MONTHS_ES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 const MONTHS_EN = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-
-const DAYS   = LANG === 'en' ? DAYS_EN   : DAYS_ES;
+const DAYS = LANG === 'en' ? DAYS_EN : DAYS_ES;
 const MONTHS = LANG === 'en' ? MONTHS_EN : MONTHS_ES;
-
 const TXT = {
-  loading:   LANG === 'en' ? 'Loading slots…'                   : 'Cargando horarios…',
-  noSlots:   LANG === 'en' ? 'No slots available for this day.' : 'No hay horarios disponibles para este día.',
+  loading: LANG === 'en' ? 'Loading slots…' : 'Cargando horarios…',
+  noSlots: LANG === 'en' ? 'No slots available for this day.' : 'No hay horarios disponibles para este día.',
   errFields: LANG === 'en' ? 'Please fill in your name and email.' : 'Por favor completá tu nombre y correo.',
-  errSelect: LANG === 'en' ? 'Please select a date and time.'   : 'Elegí una fecha y horario.',
-  errApi:    LANG === 'en' ? 'An error occurred. Please try again.' : 'Ocurrió un error. Intentá de nuevo.',
+  errSelect: LANG === 'en' ? 'Please select a date and time.' : 'Elegí una fecha y horario.',
+  errApi: LANG === 'en' ? 'An error occurred. Please try again.' : 'Ocurrió un error. Intentá de nuevo.',
   waitlistBtn: LANG === 'en' ? '⏳ Join the waiting list' : '⏳ Anotarme en lista de espera',
-  successMsg:(date, time, name) => LANG === 'en'
-    ? `Your appointment is on ${date} at ${time}. See you then, ${name}!`
-    : `Tu cita es el ${date} a las ${time}. ¡Te esperamos, ${name}!`,
+  successMsg: (date, time, name) => LANG === 'en' ? `Your appointment is on ${date} at ${time}. See you then, ${name}!` : `Tu cita es el ${date} a las ${time}. ¡Te esperamos, ${name}!`,
 };
-
 function getMonday(offset) {
   const d = new Date();
   d.setDate(d.getDate() - d.getDay() + 1 + offset * 7);
   d.setHours(0, 0, 0, 0);
   return d;
 }
-
-function fmt(d) {
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-}
-
+function fmt(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function renderWeek() {
   const monday = getMonday(weekOffset);
   const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6);
-  document.getElementById('week-label').textContent =
-    `${monday.getDate()} ${MONTHS[monday.getMonth()]} – ${sunday.getDate()} ${MONTHS[sunday.getMonth()]}`;
-
+  document.getElementById('week-label').textContent = `${monday.getDate()} ${MONTHS[monday.getMonth()]} – ${sunday.getDate()} ${MONTHS[sunday.getMonth()]}`;
   const row = document.getElementById('days-row');
   row.innerHTML = '';
   const today = new Date(); today.setHours(0, 0, 0, 0);
-
   for (let i = 0; i < 7; i++) {
     const d = new Date(monday); d.setDate(monday.getDate() + i);
     const btn = document.createElement('button');
@@ -336,40 +264,22 @@ function renderWeek() {
     row.appendChild(btn);
   }
 }
-
-function changeWeek(dir) {
-  weekOffset += dir;
-  if (weekOffset < 0) weekOffset = 0;
-  renderWeek();
-}
-
+function changeWeek(dir) { weekOffset += dir; if (weekOffset < 0) weekOffset = 0; renderWeek(); }
 function selectDate(dateStr, btn) {
-  selectedDate = dateStr;
-  selectedSlot = null;
+  selectedDate = dateStr; selectedSlot = null;
   document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
   document.getElementById('step2').style.display = 'block';
   document.getElementById('step3').style.display = 'none';
   loadSlots(dateStr);
 }
-
 async function loadSlots(dateStr) {
-  document.getElementById('slots-container').innerHTML =
-    `<div class="slots-loading">${TXT.loading}</div>`;
-  const res  = await fetch(`/api/slots/${SLUG}?fecha=${dateStr}`);
+  document.getElementById('slots-container').innerHTML = `<div class="slots-loading">${TXT.loading}</div>`;
+  const res = await fetch(`/api/slots/${SLUG}?fecha=${dateStr}`);
   const data = await res.json();
   const cont = document.getElementById('slots-container');
   if (!data.slots || data.slots.length === 0) {
-    const waitlistUrl = `/agenda/${SLUG}/espera?fecha=${dateStr}`;
-    cont.innerHTML = `
-      <div class="slots-empty">${TXT.noSlots}</div>
-      <div class="text-center mt-3">
-        <a href="${waitlistUrl}"
-           class="btn btn-outline-secondary btn-sm fw-semibold"
-           style="border-color:#F97316; color:#F97316;">
-          ${TXT.waitlistBtn}
-        </a>
-      </div>`;
+    cont.innerHTML = `<div class="slots-empty">${TXT.noSlots}</div><div class="text-center mt-3"><a href="/agenda/${SLUG}/espera?fecha=${dateStr}" class="btn btn-outline-secondary btn-sm fw-semibold" style="border-color:#F97316; color:#F97316;">${TXT.waitlistBtn}</a></div>`;
     return;
   }
   const grid = document.createElement('div');
@@ -384,7 +294,6 @@ async function loadSlots(dateStr) {
   cont.innerHTML = '';
   cont.appendChild(grid);
 }
-
 function selectSlot(slot, btn) {
   selectedSlot = slot;
   document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
@@ -392,253 +301,108 @@ function selectSlot(slot, btn) {
   document.getElementById('step3').style.display = 'block';
   document.getElementById('step3').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
-
-// ── Cupón de descuento ───────────────────────────────────────────────────────
-let appliedCoupon = null;  // null o {code, discount_type, discount_value}
-
+let appliedCoupon = null;
 function resetCoupon() {
   appliedCoupon = null;
-  document.getElementById('coupon-ok').style.display  = 'none';
+  document.getElementById('coupon-ok').style.display = 'none';
   document.getElementById('coupon-err').style.display = 'none';
   updateBestDiscountPreview();
 }
-
 function updateBestDiscountPreview() {
-  /* Compara cupón vs referido y muestra el que gana en el resumen verde. */
-  const box   = document.getElementById('best-discount-box');
+  const box = document.getElementById('best-discount-box');
   const label = document.getElementById('best-discount-label');
-  const hasCoupon   = appliedCoupon !== null;
-  const hasReferral = appliedRef   !== null;
-
-  if (!hasCoupon && !hasReferral) { box.style.display = 'none'; return; }
-  if (!hasCoupon && hasReferral)  { box.style.display = 'none'; return; }  // solo referido ya visible en banner
-  if (hasCoupon  && !hasReferral) { box.style.display = 'none'; return; }  // solo cupón ya visible en coupon-ok
-
-  // Ambos presentes: calcular ganador
-  const cv = appliedCoupon.discount_value;
-  const rv = appliedRef.referee_discount;
+  const hasCoupon = appliedCoupon !== null;
+  const hasReferral = appliedRef !== null;
+  if (!hasCoupon || !hasReferral) { box.style.display = 'none'; return; }
+  const cv = appliedCoupon.discount_value; const rv = appliedRef.referee_discount;
   let msg;
-  if (cv === rv) {
-    const disc = `${cv}%`;
-    msg = LANG === 'en'
-      ? `🏆 Coupon + referral! Both give ${disc} — ${disc} off will be applied`
-      : `🏆 ¡Cupón + referido! Ambos dan ${disc} — se aplicará ${disc} de descuento`;
-  } else if (cv > rv) {
-    msg = LANG === 'en'
-      ? `🏆 Coupon wins! ${cv}% off applied (referral gave ${rv}%)`
-      : `🏆 ¡Gana el cupón! Se aplicará ${cv}% de descuento (el referido daba ${rv}%)`;
-  } else {
-    msg = LANG === 'en'
-      ? `🏆 Referral wins! ${rv}% off applied (coupon gave ${cv}%)`
-      : `🏆 ¡Gana el referido! Se aplicará ${rv}% de descuento (el cupón daba ${cv}%)`;
-  }
-  label.textContent = msg;
-  box.style.display = 'block';
+  if (cv === rv) { msg = LANG === 'en' ? `🏆 Coupon + referral! Both give ${cv}% — ${cv}% off will be applied` : `🏆 ¡Cupón + referido! Ambos dan ${cv}% — se aplicará ${cv}% de descuento`; }
+  else if (cv > rv) { msg = LANG === 'en' ? `🏆 Coupon wins! ${cv}% off applied` : `🏆 ¡Gana el cupón! Se aplicará ${cv}% de descuento`; }
+  else { msg = LANG === 'en' ? `🏆 Referral wins! ${rv}% off applied` : `🏆 ¡Gana el referido! Se aplicará ${rv}% de descuento`; }
+  label.textContent = msg; box.style.display = 'block';
 }
-
 async function aplicarCupon() {
   const code = document.getElementById('c-coupon').value.trim().toUpperCase();
-  const okEl  = document.getElementById('coupon-ok');
-  const errEl = document.getElementById('coupon-err');
-  okEl.style.display  = 'none';
-  errEl.style.display = 'none';
-  appliedCoupon = null;
-
+  const okEl = document.getElementById('coupon-ok'); const errEl = document.getElementById('coupon-err');
+  okEl.style.display = 'none'; errEl.style.display = 'none'; appliedCoupon = null;
   if (!code) return;
-
   const res = await fetch(`/api/validar-cupon?slug=${SLUG}&code=${encodeURIComponent(code)}`);
   const data = await res.json();
-
-  if (data.valid) {
-    appliedCoupon = { code, discount_type: data.discount_type, discount_value: data.discount_value };
-    okEl.textContent  = '✅ ' + data.message;
-    okEl.style.display = 'block';
-  } else {
-    errEl.textContent  = '❌ ' + data.message;
-    errEl.style.display = 'block';
-  }
+  if (data.valid) { appliedCoupon = { code, discount_type: data.discount_type, discount_value: data.discount_value }; okEl.textContent = '✅ ' + data.message; okEl.style.display = 'block'; }
+  else { errEl.textContent = '❌ ' + data.message; errEl.style.display = 'block'; }
   updateBestDiscountPreview();
 }
-
 async function confirmBooking() {
-  const name  = document.getElementById('c-name').value.trim();
+  const name = document.getElementById('c-name').value.trim();
   const email = document.getElementById('c-email').value.trim();
   const errEl = document.getElementById('book-error');
-
-  if (!name || !email) {
-    errEl.textContent = TXT.errFields;
-    errEl.style.display = 'block';
-    return;
-  }
-  if (!selectedDate || !selectedSlot) {
-    errEl.textContent = TXT.errSelect;
-    errEl.style.display = 'block';
-    return;
-  }
+  if (!name || !email) { errEl.textContent = TXT.errFields; errEl.style.display = 'block'; return; }
+  if (!selectedDate || !selectedSlot) { errEl.textContent = TXT.errSelect; errEl.style.display = 'block'; return; }
   errEl.style.display = 'none';
-
-  const body = {
-    client_name:  name,
-    client_email: email,
-    client_phone: document.getElementById('c-phone').value.trim(),
-    notes:        document.getElementById('c-notes').value.trim(),
-    date:         selectedDate,
-    start_time:   selectedSlot.start,
-    end_time:     selectedSlot.end,
-    coupon_code:  appliedCoupon ? appliedCoupon.code : '',
-    ref_code:     INCOMING_REF || '',   // Código de referido si vino en la URL
-  };
-
-  const res = await fetch(`/api/book/${SLUG}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-
+  const body = { client_name: name, client_email: email, client_phone: document.getElementById('c-phone').value.trim(), notes: document.getElementById('c-notes').value.trim(), date: selectedDate, start_time: selectedSlot.start, end_time: selectedSlot.end, coupon_code: appliedCoupon ? appliedCoupon.code : '', ref_code: INCOMING_REF || '' };
+  const res = await fetch(`/api/book/${SLUG}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   if (res.ok) {
     const resData = await res.json();
     document.getElementById('step1').style.display = 'none';
     document.getElementById('step2').style.display = 'none';
     document.getElementById('step3').style.display = 'none';
-    const sc = document.getElementById('success-card');
-    sc.style.display = 'block';
-    document.getElementById('success-msg').textContent =
-      TXT.successMsg(selectedDate, selectedSlot.start, name.split(' ')[0]);
-
-    // Mostrar etiqueta del descuento aplicado
-    if (resData.discount_winner && resData.discount_winner !== 'none' && resData.discount_label) {
-      const dlEl = document.getElementById('discount-applied-label');
-      dlEl.textContent = '🏷️ ' + resData.discount_label;
-      dlEl.style.display = 'block';
-    }
-
-    // Mostrar sección de compartir enlace si el programa está activo
+    const sc = document.getElementById('success-card'); sc.style.display = 'block';
+    document.getElementById('success-msg').textContent = TXT.successMsg(selectedDate, selectedSlot.start, name.split(' ')[0]);
+    if (resData.discount_winner && resData.discount_winner !== 'none' && resData.discount_label) { const dlEl = document.getElementById('discount-applied-label'); dlEl.textContent = '🏷️ ' + resData.discount_label; dlEl.style.display = 'block'; }
     if (resData.referral_active && resData.ref_url) {
       const shareSection = document.getElementById('ref-share-section');
-      const refInput     = document.getElementById('ref-share-input');
-      const subEl        = document.getElementById('ref-share-sub');
-      const waBtn        = document.getElementById('ref-wa-btn');
-
-      refInput.value = resData.ref_url;
-
-      const discVal = resData.referrer_discount;
-      const discType = resData.discount_type;
-      const sym = resData.symbol || '';
-      let discStr = discType === 'percent' ? `${discVal}%` : `${sym}${discVal}`;
-      subEl.textContent = (LANG === 'en'
-        ? `Copy your link — for each friend who books, you both get ${discStr} off.`
-        : `Copiá tu enlace — por cada amigo que reserve, ambos ganan ${discStr}.`);
-
-      const waText = encodeURIComponent(
-        LANG === 'en'
-          ? `Book with ${name.split(' ')[0] || 'me'} and get ${discStr} off your first appointment! ${resData.ref_url}`
-          : `¡Reservá con ${name.split(' ')[0] || 'mí'} y conseguí ${discStr} de descuento en tu primera cita! ${resData.ref_url}`
-      );
-      waBtn.href = `https://wa.me/?text=${waText}`;
-      waBtn.style.display = 'inline-block';
-
+      document.getElementById('ref-share-input').value = resData.ref_url;
+      const discStr = resData.discount_type === 'percent' ? `${resData.referrer_discount}%` : `${resData.symbol || ''}${resData.referrer_discount}`;
+      document.getElementById('ref-share-sub').textContent = LANG === 'en' ? `Copy your link — for each friend who books, you both get ${discStr} off.` : `Copiá tu enlace — por cada amigo que reserve, ambos ganan ${discStr}.`;
+      const waBtn = document.getElementById('ref-wa-btn');
+      const waText = encodeURIComponent(LANG === 'en' ? `Book with ${name.split(' ')[0] || 'me'} and get ${discStr} off! ${resData.ref_url}` : `¡Reservá y conseguí ${discStr} de descuento! ${resData.ref_url}`);
+      waBtn.href = `https://wa.me/?text=${waText}`; waBtn.style.display = 'inline-block';
       shareSection.style.display = 'block';
     }
-
     sc.scrollIntoView({ behavior: 'smooth' });
   } else {
-    const err = await res.json();
-    errEl.textContent = err.detail || TXT.errApi;
-    errEl.style.display = 'block';
+    const err = await res.json(); errEl.textContent = err.detail || TXT.errApi; errEl.style.display = 'block';
   }
 }
-
 function copyRefLink() {
-  const input = document.getElementById('ref-share-input');
-  input.select();
+  const input = document.getElementById('ref-share-input'); input.select();
   navigator.clipboard.writeText(input.value).then(() => {
-    const btn = document.getElementById('copy-btn-text');
-    btn.textContent = LANG === 'en' ? 'Copied!' : '¡Copiado!';
+    const btn = document.getElementById('copy-btn-text'); btn.textContent = LANG === 'en' ? 'Copied!' : '¡Copiado!';
     setTimeout(() => { btn.textContent = LANG === 'en' ? 'Copy link' : 'Copiar enlace'; }, 2000);
   });
 }
-
 renderWeek();
 </script>
 
-<!-- ── Chatbot flotante ─────────────────────────────────────────────────── -->
 <style>
-#chat-fab{position:fixed;bottom:24px;right:24px;width:56px;height:56px;border-radius:50%;background:#F97316;color:#fff;border:none;font-size:26px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.2);z-index:1000;display:flex;align-items:center;justify-content:center;}
-#chat-box{position:fixed;bottom:92px;right:24px;width:340px;max-height:480px;background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.15);z-index:1000;display:none;flex-direction:column;overflow:hidden;}
+#chat-fab{position:fixed;bottom:24px;right:24px;width:52px;height:52px;border-radius:50%;background:#F97316;color:#fff;border:none;font-size:24px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.2);z-index:1000;display:flex;align-items:center;justify-content:center;}
+#chat-box{position:fixed;bottom:88px;right:24px;width:330px;max-height:460px;background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.15);z-index:1000;display:none;flex-direction:column;overflow:hidden;}
 #chat-header{background:#F97316;color:#fff;padding:14px 16px;font-weight:700;font-size:15px;display:flex;justify-content:space-between;align-items:center;}
-#chat-msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;min-height:200px;max-height:300px;}
-.chat-msg{padding:10px 14px;border-radius:12px;font-size:14px;line-height:1.5;max-width:85%;}
+#chat-msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;min-height:200px;max-height:280px;}
+.chat-msg{padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.5;max-width:85%;}
 .chat-msg.bot{background:#f3f4f6;color:#1A1A1A;align-self:flex-start;border-bottom-left-radius:4px;}
 .chat-msg.user{background:#F97316;color:#fff;align-self:flex-end;border-bottom-right-radius:4px;}
 #chat-input-row{display:flex;border-top:1px solid #e5e7eb;padding:10px;}
-#chat-input{flex:1;border:none;outline:none;font-size:14px;padding:6px 8px;}
-#chat-send{background:#F97316;color:#fff;border:none;border-radius:8px;padding:6px 14px;cursor:pointer;font-weight:700;}
+#chat-input{flex:1;border:none;outline:none;font-size:13px;padding:6px 8px;}
+#chat-send{background:#F97316;color:#fff;border:none;border-radius:8px;padding:6px 12px;cursor:pointer;font-weight:700;}
 </style>
-
 <button id="chat-fab" onclick="toggleChat()" title="Chatear">💬</button>
-
 <div id="chat-box">
-  <div id="chat-header">
-    <span>💬 Preguntas frecuentes</span>
-    <button onclick="toggleChat()" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;">✕</button>
-  </div>
-  <div id="chat-msgs">
-    <div class="chat-msg bot">¡Hola! ¿En qué te puedo ayudar? Podés preguntarme sobre los servicios, horarios o cómo reservar.</div>
-  </div>
-  <div id="chat-input-row">
-    <input id="chat-input" type="text" placeholder="Escribí tu pregunta..." onkeydown="if(event.key==='Enter')sendChat()"/>
-    <button id="chat-send" onclick="sendChat()">➤</button>
-  </div>
+  <div id="chat-header"><span>💬 Preguntas frecuentes</span><button onclick="toggleChat()" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;">✕</button></div>
+  <div id="chat-msgs"><div class="chat-msg bot">¡Hola! ¿En qué te puedo ayudar?</div></div>
+  <div id="chat-input-row"><input id="chat-input" type="text" placeholder="Escribí tu pregunta..." onkeydown="if(event.key==='Enter')sendChat()"/><button id="chat-send" onclick="sendChat()">➤</button></div>
 </div>
-
 <script>
 const CHAT_SLUG = "{{ prof.slug }}";
-let chatHistory = [];
-let chatOpen = false;
-
-function toggleChat() {
-  chatOpen = !chatOpen;
-  document.getElementById('chat-box').style.display = chatOpen ? 'flex' : 'none';
-  if (chatOpen) document.getElementById('chat-input').focus();
-}
-
-function appendMsg(role, text) {
-  const msgs = document.getElementById('chat-msgs');
-  const div = document.createElement('div');
-  div.className = 'chat-msg ' + (role === 'user' ? 'user' : 'bot');
-  div.textContent = text;
-  msgs.appendChild(div);
-  msgs.scrollTop = msgs.scrollHeight;
-}
-
+let chatHistory = [], chatOpen = false;
+function toggleChat() { chatOpen = !chatOpen; document.getElementById('chat-box').style.display = chatOpen ? 'flex' : 'none'; if (chatOpen) document.getElementById('chat-input').focus(); }
+function appendMsg(role, text) { const msgs = document.getElementById('chat-msgs'); const div = document.createElement('div'); div.className = 'chat-msg ' + (role === 'user' ? 'user' : 'bot'); div.textContent = text; msgs.appendChild(div); msgs.scrollTop = msgs.scrollHeight; }
 async function sendChat() {
-  const input = document.getElementById('chat-input');
-  const text = input.value.trim();
-  if (!text) return;
-  input.value = '';
-  appendMsg('user', text);
-  chatHistory.push({ role: 'user', content: text });
-
-  const typing = document.createElement('div');
-  typing.className = 'chat-msg bot';
-  typing.textContent = '...';
-  typing.id = 'chat-typing';
-  document.getElementById('chat-msgs').appendChild(typing);
-
-  try {
-    const res = await fetch(`/api/chat/${CHAT_SLUG}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: chatHistory }),
-    });
-    const data = await res.json();
-    typing.remove();
-    appendMsg('bot', data.reply);
-    chatHistory.push({ role: 'assistant', content: data.reply });
-  } catch {
-    typing.remove();
-    appendMsg('bot', 'Lo siento, no puedo responder ahora. Intentá más tarde.');
-  }
+  const input = document.getElementById('chat-input'); const text = input.value.trim(); if (!text) return;
+  input.value = ''; appendMsg('user', text); chatHistory.push({ role: 'user', content: text });
+  const typing = document.createElement('div'); typing.className = 'chat-msg bot'; typing.textContent = '...'; typing.id = 'chat-typing'; document.getElementById('chat-msgs').appendChild(typing);
+  try { const res = await fetch(`/api/chat/${CHAT_SLUG}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: chatHistory }) }); const data = await res.json(); typing.remove(); appendMsg('bot', data.reply); chatHistory.push({ role: 'assistant', content: data.reply }); }
+  catch { typing.remove(); appendMsg('bot', 'Lo siento, no puedo responder ahora.'); }
 }
 </script>
 </body>
