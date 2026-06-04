@@ -3,62 +3,52 @@
 
 {% block content %}
 
-<div class="text-center py-4">
+<div class="text-center py-5" style="max-width:520px;margin:0 auto;">
 
-  <!-- Ícono de éxito -->
-  <div class="mb-4">
-    <div style="width:80px;height:80px;background:#dcfce7;border-radius:50%;
-                display:flex;align-items:center;justify-content:center;
-                margin:0 auto;font-size:2.5rem;">
-      ✅
-    </div>
+  <!-- Ícono animado -->
+  <div style="width:88px;height:88px;background:#dcfce7;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 24px;font-size:2.8rem;border:3px solid #bbf7d0;">
+    🎉
   </div>
 
-  <!-- Título -->
-  <h1 class="fw-black fs-2 mb-2">
+  <h1 class="fw-black mb-2" style="font-size:2rem;letter-spacing:-.03em;color:#1a1a1a;">
     {{ t.payment_success_title if t is defined else '¡Pago exitoso!' }}
   </h1>
-  <p class="text-muted mb-4" style="font-size:1rem;">
+  <p class="text-muted mb-4" style="font-size:1rem;line-height:1.6;">
     {{ t.payment_success_subtitle if t is defined else 'Tus módulos ya están activos en tu panel.' }}
   </p>
 
   {% if modules_activated %}
-  <!-- Módulos activados -->
-  <div class="card border-0 shadow-sm text-start mx-auto mb-4" style="max-width:480px;">
-    <div class="card-body p-4">
-      <div class="text-uppercase fw-bold small text-muted mb-3" style="letter-spacing:.5px;">
-        {{ t.payment_success_modules if t is defined else 'Módulos activados:' }}
+  <div class="card border-0 shadow-sm text-start mb-4" style="border-radius:var(--pal-radius);">
+    <div class="card-body p-0">
+      <div class="px-4 py-3 border-bottom" style="background:#fafaf8;border-radius:var(--pal-radius) var(--pal-radius) 0 0;">
+        <span class="section-label-sm mb-0">{{ t.payment_success_modules if t is defined else 'Módulos activados' }}</span>
       </div>
-      <div class="d-flex flex-column gap-2">
+      <div class="p-2">
         {% for mod in modules_activated %}
-        <div class="d-flex align-items-center gap-2">
-          <span style="font-size:1.3rem;">{{ mod.icon }}</span>
-          <span class="fw-semibold">
-            {% if lang == 'en' %}{{ mod.name_en }}{% else %}{{ mod.name_es }}{% endif %}
-          </span>
-          <span class="ms-auto badge rounded-pill"
-                style="background:#dcfce7;color:#166534;">
-            ✓ Activo
-          </span>
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #f4f4f2;">
+          <div style="width:38px;height:38px;border-radius:9px;background:#dcfce7;border:1px solid #bbf7d0;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;">{{ mod.icon }}</div>
+          <span class="fw-semibold" style="font-size:.92rem;">{% if lang == 'en' %}{{ mod.name_en }}{% else %}{{ mod.name_es }}{% endif %}</span>
+          <span class="ms-auto" style="background:#dcfce7;color:#166534;border:1px solid #bbf7d0;border-radius:20px;font-size:.72rem;font-weight:700;padding:3px 10px;">✓ {{ 'Activo' if lang == 'es' else 'Active' }}</span>
         </div>
         {% endfor %}
       </div>
-
       {% if payment %}
-      <hr class="my-3"/>
-      <div class="d-flex justify-content-between text-muted small">
-        <span>Total pagado</span>
-        <span class="fw-bold text-dark">${{ (payment.amount_cents // 100) }}/mes</span>
+      <div class="px-4 py-3 d-flex justify-content-between" style="background:#fafaf8;border-radius:0 0 var(--pal-radius) var(--pal-radius);">
+        <span class="text-muted small">{{ 'Total mensual' if lang == 'es' else 'Monthly total' }}</span>
+        <span class="fw-black text-pal">${{ (payment.amount_cents // 100) }}/mes</span>
       </div>
       {% endif %}
     </div>
   </div>
   {% endif %}
 
-  <!-- CTA -->
-  <a href="/dashboard" class="btn btn-pal fw-bold px-5 py-3 fs-6">
+  <a href="/dashboard" class="btn btn-pal fw-bold px-5 py-3" style="font-size:1rem;border-radius:10px;">
     {{ t.payment_success_cta if t is defined else 'Ir al dashboard →' }}
   </a>
+
+  <div class="mt-3 text-muted" style="font-size:.78rem;">
+    📧 {{ 'Vas a recibir un email de confirmación en los próximos minutos.' if lang == 'es' else 'You\'ll receive a confirmation email shortly.' }}
+  </div>
 
 </div>
 

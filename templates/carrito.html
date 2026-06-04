@@ -3,18 +3,18 @@
 
 {% block content %}
 
-<div class="mb-4">
-  <h1 class="fw-black fs-3 mb-1">
-    🛒 {{ t.cart_title if t is defined else 'Tu carrito' }}
-  </h1>
-  <p class="text-muted small mb-0">
-    {{ t.cart_subtitle if t is defined else 'Revisá los módulos seleccionados antes de pagar' }}
-  </p>
+<!-- Hero -->
+<div class="dashboard-hero mb-4">
+  <div>
+    <div class="section-label">PressAndLive</div>
+    <h1 class="fw-black mb-1" style="font-size:1.7rem;">{{ t.cart_title if t is defined else 'Tu carrito' }}</h1>
+    <p class="text-muted small mb-0">{{ t.cart_subtitle if t is defined else 'Revisá los módulos seleccionados antes de pagar' }}</p>
+  </div>
 </div>
 
-<!-- ── Carrito vacío ────────────────────────────────────────────────────────── -->
+<!-- Carrito vacío -->
 <div id="cart-empty" class="d-none">
-  <div class="card border-0 shadow-sm text-center p-5 text-muted">
+  <div class="card border-0 shadow-sm text-center p-5 text-muted" style="border-radius:var(--pal-radius);">
     <div class="fs-1 mb-3">🛒</div>
     <div class="mb-3">{{ t.cart_empty if t is defined else 'Tu carrito está vacío.' }}</div>
     <a href="/catalogo" class="btn btn-pal fw-semibold d-inline-block mx-auto" style="width:fit-content;">
@@ -23,88 +23,57 @@
   </div>
 </div>
 
-<!-- ── Contenido del carrito ─────────────────────────────────────────────────── -->
+<!-- Contenido -->
 <div id="cart-content" class="d-none">
   <div class="row g-4">
 
-    <!-- Columna izquierda: módulos seleccionados -->
+    <!-- Módulos -->
     <div class="col-12 col-lg-7">
-      <div class="card border-0 shadow-sm">
+      <div class="card border-0 shadow-sm" style="border-radius:var(--pal-radius);">
         <div class="card-body p-0">
-          <table class="table table-borderless mb-0">
-            <thead style="background:#f9f9f9;border-bottom:1px solid #eee;">
-              <tr>
-                <th class="px-4 py-3 fw-semibold text-muted small text-uppercase" style="letter-spacing:.5px;">
-                  {{ t.cart_col_module if t is defined else 'Módulo' }}
-                </th>
-                <th class="px-4 py-3 fw-semibold text-muted small text-uppercase text-end" style="letter-spacing:.5px;">
-                  {{ t.cart_col_price if t is defined else 'Precio/mes' }}
-                </th>
-                <th class="px-2 py-3"></th>
-              </tr>
-            </thead>
-            <tbody id="cart-body">
-              <!-- Filas generadas por JS -->
-            </tbody>
-          </table>
+          <div class="px-4 py-3 border-bottom" style="background:#fafaf8;border-radius:var(--pal-radius) var(--pal-radius) 0 0;">
+            <span class="section-label-sm mb-0">{{ t.cart_col_module if t is defined else 'Módulos seleccionados' }}</span>
+          </div>
+          <div id="cart-body" class="p-2"></div>
         </div>
       </div>
-
       <a href="/catalogo" class="text-muted small text-decoration-none d-inline-block mt-3">
         ← {{ t.cart_back if t is defined else 'Seguir eligiendo módulos' }}
       </a>
     </div>
 
-    <!-- Columna derecha: resumen y pago -->
+    <!-- Resumen -->
     <div class="col-12 col-lg-5">
-      <div class="card border-0 shadow-sm" style="background:#fff7ed;border:1.5px solid #fed7aa !important;">
+      <div class="card border-0 shadow-sm" style="background:#fff7ed;border:1.5px solid #fed7aa !important;border-radius:var(--pal-radius);">
         <div class="card-body p-4">
-          <div class="fw-black fs-6 mb-3" style="color:#9a3412;text-transform:uppercase;letter-spacing:.5px;">
-            Resumen
+          <div class="fw-black mb-3" style="color:#9a3412;font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;">
+            {{ 'Resumen del pedido' if lang == 'es' else 'Order summary' }}
           </div>
-
-          <!-- Subtotal -->
           <div class="d-flex justify-content-between mb-2">
-            <span class="text-muted">{{ t.cart_subtotal if t is defined else 'Subtotal mensual' }}</span>
-            <span class="fw-semibold" id="subtotal-display">$0</span>
+            <span class="text-muted small">{{ t.cart_subtotal if t is defined else 'Subtotal mensual' }}</span>
+            <span class="fw-semibold small" id="subtotal-display">$0</span>
           </div>
-
-          <!-- Descuento paquete completo -->
           <div id="savings-row" class="d-flex justify-content-between mb-2 d-none">
-            <span class="text-success fw-semibold" style="font-size:.9rem;">
-              🎉 {{ t.cart_bundle_savings if t is defined else '¡Descuento paquete completo!' }}
-            </span>
-            <span class="text-success fw-semibold" id="savings-display"></span>
+            <span class="fw-semibold small" style="color:#15803d;">🎉 {{ t.cart_bundle_savings if t is defined else '¡Descuento paquete!' }}</span>
+            <span class="fw-semibold small" style="color:#15803d;" id="savings-display"></span>
           </div>
-
-          <hr class="my-3"/>
-
-          <!-- Total -->
+          <hr class="my-3" style="border-color:#fed7aa;"/>
           <div class="d-flex justify-content-between align-items-center mb-4">
-            <span class="fw-black fs-6">{{ t.cart_total if t is defined else 'Total mensual' }}</span>
+            <span class="fw-black" style="font-size:.9rem;">{{ t.cart_total if t is defined else 'Total mensual' }}</span>
             <div class="text-end">
-              <span class="fw-black fs-3 text-pal" id="total-display">$0</span>
-              <div class="text-muted" style="font-size:.75rem;">
-                {{ t.catalog_per_month if t is defined else '/mes' }}
-              </div>
-              <div id="total-local-display" class="d-none" style="font-size:.72rem; color:#6b7280; margin-top:2px;"></div>
+              <span class="fw-black text-pal" style="font-size:2rem;letter-spacing:-.03em;" id="total-display">$0</span>
+              <div class="text-muted" style="font-size:.72rem;">{{ t.catalog_per_month if t is defined else '/mes' }}</div>
+              <div id="total-local-display" class="d-none" style="font-size:.7rem;color:#6b7280;margin-top:2px;"></div>
             </div>
           </div>
-
-          <!-- Botón de pago -->
-          <button id="checkout-btn" class="btn btn-pal w-100 fw-bold py-3 fs-6"
-                  onclick="procederPago()">
+          <button id="checkout-btn" class="btn btn-pal w-100 fw-bold py-3" onclick="procederPago()" style="font-size:1rem;">
             {{ t.cart_checkout_btn if t is defined else 'Proceder al pago →' }}
           </button>
-
-          <!-- Error -->
           <div id="checkout-error" class="alert alert-danger mt-3 d-none" role="alert">
-            <strong>Error al procesar el pago:</strong>
-            <div id="checkout-error-msg" class="mt-1" style="font-size:.9rem;"></div>
+            <strong>{{ 'Error al procesar el pago:' if lang == 'es' else 'Payment error:' }}</strong>
+            <div id="checkout-error-msg" class="mt-1" style="font-size:.88rem;"></div>
           </div>
-
-          <!-- Nota legal -->
-          <p class="text-muted mt-3 mb-0" style="font-size:.75rem;line-height:1.5;">
+          <p class="text-muted mt-3 mb-0" style="font-size:.72rem;line-height:1.6;">
             🔒 {{ t.cart_note if t is defined else 'La suscripción se renueva automáticamente cada mes. Podés cancelar cuando quieras.' }}
           </p>
         </div>
@@ -162,23 +131,24 @@ function renderCart() {
     if (!mod) return;
     subtotal += mod.price_cents;
 
-    const tr = document.createElement('tr');
-    tr.style.borderBottom = '1px solid #f0f0f0';
-    tr.innerHTML = `
-      <td class="px-4 py-3">
-        <span class="me-2" style="font-size:1.2rem;">${mod.icon}</span>
-        <span class="fw-semibold">${mod.name}</span>
-      </td>
-      <td class="px-4 py-3 text-end fw-bold text-pal">
-        $${Math.round(mod.price_cents / 100)}
-      </td>
-      <td class="px-2 py-3 text-center">
-        <button class="btn btn-sm btn-outline-danger rounded-circle"
-                style="width:28px;height:28px;line-height:1;padding:0;"
-                onclick="removeModule(${id})" title="Quitar">✕</button>
-      </td>
+    const div = document.createElement('div');
+    div.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid #f4f4f2;gap:12px;';
+    div.innerHTML = `
+      <div style="display:flex;align-items:center;gap:12px;flex:1;">
+        <div style="width:42px;height:42px;border-radius:10px;background:#fff7ed;border:1px solid #fed7aa;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;">${mod.icon}</div>
+        <div>
+          <div style="font-weight:700;font-size:.92rem;color:#1a1a1a;">${mod.name}</div>
+          <div style="font-size:.75rem;color:#9ca3af;">${'Suscripción mensual' || 'Monthly subscription'}</div>
+        </div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;">
+        <div style="font-weight:900;font-size:1.1rem;color:#f97316;">$${Math.round(mod.price_cents / 100)}</div>
+        <div style="font-size:.7rem;color:#9ca3af;">/mes</div>
+      </div>
+      <button onclick="removeModule(${id})" title="Quitar"
+        style="width:28px;height:28px;border-radius:50%;border:1.5px solid #e5e7eb;background:#fff;cursor:pointer;font-size:.8rem;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#9ca3af;">✕</button>
     `;
-    tbody.appendChild(tr);
+    tbody.appendChild(div);
   });
 
   // Calcular totales
